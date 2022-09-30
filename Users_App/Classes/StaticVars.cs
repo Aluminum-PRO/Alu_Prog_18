@@ -14,22 +14,22 @@ namespace Users_App.Classes
         //public static int ;
         public static string _mainSource;
         //public static bool ;
-        public static List<Process> processesList = null;
-        public static List<CompletedProcessesClass> completedProcessesList = null;
-        public static List<OpenProcessesClass> openProcessesList = null;
+        public static List<Process> _processesList = null;
+        public static List<CompletedProcessesClass> _completedProcessesList = null;
+        public static List<OpenProcessesClass> _openProcessesList = null;
 
         public class CompletedProcessesClass
         {
             public string _processName = "";
             public int _processTime = 0;
-            public bool _processBaned = false;
+            //public bool _processBaned = false;
         }
 
         public class OpenProcessesClass
         {
             public string _processName = "";
             public DateTime _processStartedTime;
-            public bool _processBaned = false;
+            //public bool _processBaned = false;
         }
     }
 }

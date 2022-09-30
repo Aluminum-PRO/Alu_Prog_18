@@ -19,11 +19,15 @@ namespace Users_App
     {
         private MySql_Handler my_Handler;
         private string Source = "";
+        List<int> _openProcessesListId;
+
         public MainWindow()
         {
             InitializeComponent();
             SetAutorunValue(true);
             StaticVars._mainSource = GetMainDirectiry();
+
+            GetProcess();
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -48,29 +52,117 @@ namespace Users_App
 
         private async void GetProcess()
         {
+            StaticVars._processesList = new List<Process>();
+            StaticVars._completedProcessesList = new List<StaticVars.CompletedProcessesClass>();
+            StaticVars._openProcessesList = new List<StaticVars.OpenProcessesClass>();
+            _openProcessesListId = new List<int>();
+
             while (true)
             {
-                StaticVars.processesList.Clear();
+                if (StaticVars._processesList != null)
+                    StaticVars._processesList.Clear();
 
-                StaticVars.processesList = Process.GetProcesses().ToList<Process>();
+                StaticVars._processesList = Process.GetProcesses().ToList<Process>();
+                CheckOpenProcesses();
+                CheckCompletedProcesses();
+                SaveSurveillanceProcessesLog();
 
-                foreach (Process _processList in StaticVars.processesList)
-                {
-                    bool _checkProcess = false;
-                    foreach (List<> _openProcessesClass)
-                    {
-
-                    }
-                    _processList.ProcessName.ToString();
-                }
-
-
-                await Task.Delay(990);
+                await Task.Delay(445);
             }
+        }
 
-            
+        private void CheckOpenProcesses()
+        {
 
-            
+            foreach (Process _processList in StaticVars._processesList)
+            {
+                bool _checkProcessOpen = false;
+                if (StaticVars._openProcessesList != null)
+                {
+                    foreach (StaticVars.OpenProcessesClass _openProcessesClass in StaticVars._openProcessesList)
+                    {
+                        if (_processList.ProcessName.ToString() == _openProcessesClass._processName)
+                        {
+                            _checkProcessOpen = true;
+                        }
+                    }
+                }
+                    
+                if (!_checkProcessOpen)
+                {
+                    StaticVars._openProcessesList.Add(new StaticVars.OpenProcessesClass() { _processName = _processList.ProcessName.ToString(), _processStartedTime = DateTime.Now });
+                }
+            }
+        }
+
+        private void CheckCompletedProcesses()
+        {
+            if (StaticVars._openProcessesList == null)
+                return;
+            if (_openProcessesListId != null)
+                _openProcessesListId.Clear();
+            int k = -1;
+            foreach (StaticVars.OpenProcessesClass _openProcessesClass in StaticVars._openProcessesList)
+            {
+                bool _checkProcessOpenStatus = false;
+                k++;
+
+                foreach (Process _processList in StaticVars._processesList)
+                {
+                    if (_openProcessesClass._processName == _processList.ProcessName.ToString())
+                    {
+                        _checkProcessOpenStatus = true;
+                    }
+                }
+                if (!_checkProcessOpenStatus)
+                {
+                    bool _checkProcessCompletedStatus = false;
+                    int _minetsTime = 0, _secondsTime = 0;
+                    if (StaticVars._completedProcessesList != null)
+                    {
+                        foreach (StaticVars.CompletedProcessesClass _completedProcessesClass in StaticVars._completedProcessesList)
+                        {
+                            if (_openProcessesClass._processName == _completedProcessesClass._processName)
+                            {
+                                _checkProcessCompletedStatus = true;
+                                _minetsTime = Convert.ToInt32((DateTime.Now - _openProcessesClass._processStartedTime).ToString("mm"));
+                                _secondsTime = Convert.ToInt32((DateTime.Now - _openProcessesClass._processStartedTime).ToString("ss"));
+                                
+                                _completedProcessesClass._processTime += _minetsTime*60 + _secondsTime;
+                            }
+                        }
+                    }
+                    
+                    if (!_checkProcessCompletedStatus)
+                    {
+                        _minetsTime = Convert.ToInt32((DateTime.Now - _openProcessesClass._processStartedTime).ToString("mm"));
+                        _secondsTime = Convert.ToInt32((DateTime.Now - _openProcessesClass._processStartedTime).ToString("ss"));
+
+                        StaticVars._completedProcessesList.Add(new StaticVars.CompletedProcessesClass() { _processName = _openProcessesClass._processName, _processTime = _minetsTime * 60 + _secondsTime });
+                    }
+                    _openProcessesListId.Add(k);
+                    break;
+                }
+            }
+            if (_openProcessesListId.Count > 0)
+            {
+                foreach (int _openProcessesClassId in _openProcessesListId)
+                {
+                    StaticVars._openProcessesList.RemoveAt(_openProcessesClassId);
+                }
+                CheckCompletedProcesses();
+            }
+        }
+
+        private void SaveSurveillanceProcessesLog()
+        {
+            string _outCompletedProcesses = "";
+            foreach (StaticVars.CompletedProcessesClass _completedProcessesClass in StaticVars._completedProcessesList)
+            {
+                _outCompletedProcesses += $"{_completedProcessesClass._processName}|{_completedProcessesClass._processTime}\n";
+            }
+            using (StreamWriter _stream = new StreamWriter(CheckSurveillanceLogDirectory() + $"{DateTime.Now.ToString("d")}.txt"))
+                _stream.WriteLine(_outCompletedProcesses);
         }
 
         private string GetReplacement(int _day)
@@ -80,7 +172,7 @@ namespace Users_App
             catch
             { }
 
-            
+
             return "";
         }
 
