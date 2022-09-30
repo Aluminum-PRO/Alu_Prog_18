@@ -1,9 +1,11 @@
 ﻿using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using System.Windows;
 using Users_App.Classes;
 using Users_App.MySql_Services;
@@ -29,20 +31,49 @@ namespace Users_App
             //my_Handler = new MySql_Handler();
             //my_Handler.Getting_Update_Data(Source);
 
-            try
-            {
-                Process process = Process.Start(new ProcessStartInfo
-                {
-                    FileName = Source += "\\Al-Store\\Al-Store.exe",
-                    //Arguments = "/Hi"
-                    Arguments = "/AutoRun_Update"
-                });
-            }
-            catch (Exception Ex) { MessageBox.Show("    Авто обновление Al-Store не запущено по причине ниже. Если вам мешает окно подтверждения, вы можете отключить функцию автообновления и уведомдения об обновлении в настройках обновления Al-Store.\n\n    Причина: " + Ex.Message, "Auto Update Al-Store", MessageBoxButton.OK, MessageBoxImage.Error); }
-            Close();
+            //try
+            //{
+            //    Process process = Process.Start(new ProcessStartInfo
+            //    {
+            //        FileName = Source += "\\Al-Store\\Al-Store.exe",
+            //        //Arguments = "/Hi"
+            //        Arguments = "/AutoRun_Update"
+            //    });
+            //}
+            //catch (Exception Ex) { MessageBox.Show("    Авто обновление Al-Store не запущено по причине ниже. Если вам мешает окно подтверждения, вы можете отключить функцию автообновления и уведомдения об обновлении в настройках обновления Al-Store.\n\n    Причина: " + Ex.Message, "Auto Update Al-Store", MessageBoxButton.OK, MessageBoxImage.Error); }
+            //Close();
+
+
         }
 
-        private static string GetReplacement(int _day)
+        private async void GetProcess()
+        {
+            while (true)
+            {
+                StaticVars.processesList.Clear();
+
+                StaticVars.processesList = Process.GetProcesses().ToList<Process>();
+
+                foreach (Process _processList in StaticVars.processesList)
+                {
+                    bool _checkProcess = false;
+                    foreach (List<> _openProcessesClass)
+                    {
+
+                    }
+                    _processList.ProcessName.ToString();
+                }
+
+
+                await Task.Delay(990);
+            }
+
+            
+
+            
+        }
+
+        private string GetReplacement(int _day)
         {
             try
             { File.Delete(CheckSurveillanceLogDirectory() + $"{DateTime.Now.AddDays(-1).ToString("d")}.xlsx"); }
@@ -53,7 +84,7 @@ namespace Users_App
             return "";
         }
 
-        private static string CheckSurveillanceLogDirectory()
+        private string CheckSurveillanceLogDirectory()
         {
             string _source = StaticVars._mainSource + "\\lib\\Surveillance Log\\";
             if (!Directory.Exists(_source))
@@ -63,7 +94,7 @@ namespace Users_App
             return _source;
         }
 
-        private static string GetMainDirectiry()
+        private string GetMainDirectiry()
         {
             string _sourceOut = "", _source = Assembly.GetExecutingAssembly().Location;
             int _counts = _source.Count(f => f == '\\');
@@ -81,7 +112,7 @@ namespace Users_App
             return _sourceOut;
         }
 
-        private static bool SetAutorunValue(bool autorun)
+        private bool SetAutorunValue(bool autorun)
         {
             string ExePath = Assembly.GetExecutingAssembly().Location;
             RegistryKey reg;
