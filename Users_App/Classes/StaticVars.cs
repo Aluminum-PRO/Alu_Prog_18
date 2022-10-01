@@ -17,12 +17,21 @@ namespace Users_App.Classes
         public static List<Process> _processesList = null;
         public static List<CompletedProcessesClass> _completedProcessesList = null;
         public static List<OpenProcessesClass> _openProcessesList = null;
+        public static List<String> _processSystemList = new List<String>() { "svchost", "PhoneExperienceHost", "ShellExperienceHost", "smartscreen", "dllhost", "msedgewebview2", "lsass", "services",
+            "RtkAudUService64", "SearchIndexer", "conhost", "Users Surveillance", "NisSrv", "ApplicationFrameHost", "SearchFilterHost", "SgrmBroker", "RuntimeBroker", "Microsoft.Msn.Weather",
+            "SystemSettings", "ps64ldr", "csrss", "MsMpEng", "wininit", "smss", "dasHost", "Microsoft.Photos", "Cortana", "dwm", "Video.UI", "WUDFHost", "SecurityHealthService", "jusched",
+            "UserOOBEBroker", "tv_x64", "ServiceHub.SettingsHost", "service_update", "DTShellHlp", "sqlwriter", "SecurityHealthSystray", "TabTip", "TextInputHost", "fontdrvhost", "WmiPrvSE",
+            "Memory Compression", "remoting_host", "DiscSoftBusServiceLite", "MpCopyAccelerator", "atieclxx", "ctfmon", "OriginWebHelperService", "WebViewHost", "Registry", "StartMenuExperienceHost",
+            "spoolsv", "TvUpdateInfo", "SearchProtocolHost", "sihost", "wlanext", "winlogon", "atiesrxx", "StandardCollector.Service", "jucheck", "audiodg", "MoUsoCoreWorker", "System", "explorer",
+            "backgroundTaskHost", "FileCoAuth", "HxTsr", "MicrosoftEdgeUpdate", "GoogleUpdate", "sppsvc", "TrustedInstaller", "TiWorker", "OneDriveStandaloneUpdater", "Microsoft.SharePoint", "PilotshubApp",
+            "wermgr", "MusNotification", "MusNotificationUx", "rundll32", "consent", "msfeedssync", "ielowutil", "LaunchTM", "ScreenClippingHost", "upfc", "SIHClient", "MSBuild", "SearchApp", "taskhostw",
+            "SystemSettingsBroker", "Idle", "NETSTAT", "findstr"};
+        public static List<String> _processSystemVirusList = new List<String>() { "BackgroundDownload"};
 
         public class CompletedProcessesClass
         {
-            public string _processName = "";
-            public int _processTime = 0;
-            //public bool _processBaned = false;
+            public string _processName = "", _processType = "App";
+            public double _processTime = 0;
         }
 
         public class OpenProcessesClass

@@ -8,11 +8,11 @@ using System.Windows;
 // набор атрибутов. Измените значения этих атрибутов, чтобы изменить сведения,
 // связанные со сборкой.
 [assembly: AssemblyTitle("Users Surveillance")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Users Surveillance - Отслеживание время работы процессов ОС")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Users_App")]
-[assembly: AssemblyCopyright("Copyright ©  2022")]
+[assembly: AssemblyCompany("Aluminum Company")]
+[assembly: AssemblyProduct("Users Surveillance")]
+[assembly: AssemblyCopyright("Copyright © Aluminum Company 2022")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -51,5 +51,5 @@ using System.Windows;
 // Можно задать все значения или принять номера сборки и редакции по умолчанию 
 // используя "*", как показано ниже:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("0.0.0.1")]
-[assembly: AssemblyFileVersion("0.0.0.1")]
+[assembly: AssemblyVersion("0.1.0.1")]
+[assembly: AssemblyFileVersion("0.1.0.1")]

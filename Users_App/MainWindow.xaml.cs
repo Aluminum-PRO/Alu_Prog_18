@@ -2,11 +2,16 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Forms;
+using System.Windows.Interop;
+using System.Windows.Media.Imaging;
 using Users_App.Classes;
 using Users_App.MySql_Services;
 
@@ -17,9 +22,14 @@ namespace Users_App
     /// </summary>
     public partial class MainWindow : Window
     {
+        #region Variables
+        [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+        public static extern bool DeleteObject(IntPtr hObject);
+
         private MySql_Handler my_Handler;
-        private string Source = "";
-        List<int> _openProcessesListId;
+        private List<int> _openProcessesListId;
+        private static Bitmap BM = new Bitmap(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
+        #endregion
 
         public MainWindow()
         {
@@ -30,26 +40,6 @@ namespace Users_App
             GetProcess();
         }
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            //my_Handler = new MySql_Handler();
-            //my_Handler.Getting_Update_Data(Source);
-
-            //try
-            //{
-            //    Process process = Process.Start(new ProcessStartInfo
-            //    {
-            //        FileName = Source += "\\Al-Store\\Al-Store.exe",
-            //        //Arguments = "/Hi"
-            //        Arguments = "/AutoRun_Update"
-            //    });
-            //}
-            //catch (Exception Ex) { MessageBox.Show("    Авто обновление Al-Store не запущено по причине ниже. Если вам мешает окно подтверждения, вы можете отключить функцию автообновления и уведомдения об обновлении в настройках обновления Al-Store.\n\n    Причина: " + Ex.Message, "Auto Update Al-Store", MessageBoxButton.OK, MessageBoxImage.Error); }
-            //Close();
-
-
-        }
-
         private async void GetProcess()
         {
             StaticVars._processesList = new List<Process>();
@@ -57,6 +47,8 @@ namespace Users_App
             StaticVars._openProcessesList = new List<StaticVars.OpenProcessesClass>();
             _openProcessesListId = new List<int>();
 
+            GetSurveillanceProcessesLog();
+            int _screenshootTime = 0;
             while (true)
             {
                 if (StaticVars._processesList != null)
@@ -66,9 +58,23 @@ namespace Users_App
                 CheckOpenProcesses();
                 CheckCompletedProcesses();
                 SaveSurveillanceProcessesLog();
-
+                _screenshootTime++;
+                if (_screenshootTime >= 600)
+                {
+                    _screenshootTime = 0;
+                    
+                    SendSurveillanceProcessesLog();
+                }
                 await Task.Delay(445);
             }
+        }
+
+        private async void SendSurveillanceProcessesLog()
+        {
+            byte[] imgB;
+
+            Image_Encoder(BitmapToBitmapImage(ScreenshootSave()), out imgB);
+            //command.Parameters.Add("@image_main", MySqlDbType.Blob).Value = imgB;
         }
 
         private void CheckOpenProcesses()
@@ -87,7 +93,7 @@ namespace Users_App
                         }
                     }
                 }
-                    
+
                 if (!_checkProcessOpen)
                 {
                     StaticVars._openProcessesList.Add(new StaticVars.OpenProcessesClass() { _processName = _processList.ProcessName.ToString(), _processStartedTime = DateTime.Now });
@@ -114,32 +120,49 @@ namespace Users_App
                         _checkProcessOpenStatus = true;
                     }
                 }
-                if (!_checkProcessOpenStatus)
+
+                bool _checkProcessCompletedStatus = false;
+                double  _secondsTime = 0, _millisecondsTime = 0;
+                if (StaticVars._completedProcessesList != null)
                 {
-                    bool _checkProcessCompletedStatus = false;
-                    int _minetsTime = 0, _secondsTime = 0;
-                    if (StaticVars._completedProcessesList != null)
+                    foreach (StaticVars.CompletedProcessesClass _completedProcessesClass in StaticVars._completedProcessesList)
                     {
-                        foreach (StaticVars.CompletedProcessesClass _completedProcessesClass in StaticVars._completedProcessesList)
+                        if (_openProcessesClass._processName == _completedProcessesClass._processName)
                         {
-                            if (_openProcessesClass._processName == _completedProcessesClass._processName)
-                            {
-                                _checkProcessCompletedStatus = true;
-                                _minetsTime = Convert.ToInt32((DateTime.Now - _openProcessesClass._processStartedTime).ToString("mm"));
-                                _secondsTime = Convert.ToInt32((DateTime.Now - _openProcessesClass._processStartedTime).ToString("ss"));
-                                
-                                _completedProcessesClass._processTime += _minetsTime*60 + _secondsTime;
-                            }
+                            _checkProcessCompletedStatus = true;
+                            _secondsTime = Convert.ToInt32((DateTime.Now - _openProcessesClass._processStartedTime).ToString("ss"));
+                            _millisecondsTime = Convert.ToInt32((DateTime.Now - _openProcessesClass._processStartedTime).ToString("ff"));
+
+                            _completedProcessesClass._processTime += _secondsTime + _millisecondsTime / 100;
                         }
                     }
-                    
-                    if (!_checkProcessCompletedStatus)
-                    {
-                        _minetsTime = Convert.ToInt32((DateTime.Now - _openProcessesClass._processStartedTime).ToString("mm"));
-                        _secondsTime = Convert.ToInt32((DateTime.Now - _openProcessesClass._processStartedTime).ToString("ss"));
+                }
 
-                        StaticVars._completedProcessesList.Add(new StaticVars.CompletedProcessesClass() { _processName = _openProcessesClass._processName, _processTime = _minetsTime * 60 + _secondsTime });
+                if (!_checkProcessCompletedStatus)
+                {
+                    _secondsTime = Convert.ToInt32((DateTime.Now - _openProcessesClass._processStartedTime).ToString("ss"));
+                    _millisecondsTime = Convert.ToInt32((DateTime.Now - _openProcessesClass._processStartedTime).ToString("ff"));
+                    bool _checkProcessSystem = false;
+                    string _processType = "App";
+                    foreach (String _processSystemClass in StaticVars._processSystemList)
+                    {
+                        if (_openProcessesClass._processName == _processSystemClass)
+                            _checkProcessSystem = true;
                     }
+                    if (!_checkProcessSystem)
+                    {
+                        foreach (String _processSystemVirusClass in StaticVars._processSystemVirusList)
+                        {
+                            if (_openProcessesClass._processName == _processSystemVirusClass)
+                                _processType = "Virus";
+                        }
+                        StaticVars._completedProcessesList.Add(new StaticVars.CompletedProcessesClass() { _processName = _openProcessesClass._processName, _processTime = _secondsTime + _millisecondsTime / 100, _processType = _processType });
+                    }
+                }
+
+                _openProcessesClass._processStartedTime = DateTime.Now;
+                if (!_checkProcessOpenStatus)
+                {
                     _openProcessesListId.Add(k);
                     break;
                 }
@@ -154,26 +177,42 @@ namespace Users_App
             }
         }
 
-        private void SaveSurveillanceProcessesLog()
+        private string SaveSurveillanceProcessesLogText()
         {
             string _outCompletedProcesses = "";
             foreach (StaticVars.CompletedProcessesClass _completedProcessesClass in StaticVars._completedProcessesList)
             {
-                _outCompletedProcesses += $"{_completedProcessesClass._processName}|{_completedProcessesClass._processTime}\n";
+                _outCompletedProcesses += $"{_completedProcessesClass._processName}|{_completedProcessesClass._processTime.ToString("0.##")}|{_completedProcessesClass._processType}\n";
             }
-            using (StreamWriter _stream = new StreamWriter(CheckSurveillanceLogDirectory() + $"{DateTime.Now.ToString("d")}.txt"))
-                _stream.WriteLine(_outCompletedProcesses);
+            return _outCompletedProcesses;
         }
 
-        private string GetReplacement(int _day)
+        private void SaveSurveillanceProcessesLog()
         {
+            using (StreamWriter _stream = new StreamWriter(CheckSurveillanceLogDirectory() + $"{DateTime.Now.ToString("d")}.txt"))
+                _stream.WriteLine(SaveSurveillanceProcessesLogText());
+        }
+
+        private void GetSurveillanceProcessesLog()
+        {
+            string _todaySurveillanceProcessesLogIn = "", _todaySurveillanceProcessesLogOut = "";
+            if (File.Exists(CheckSurveillanceLogDirectory() + $"{DateTime.Now.ToString("d")}.txt"))
+            {
+                _todaySurveillanceProcessesLogIn = File.ReadAllText(CheckSurveillanceLogDirectory() + $"{DateTime.Now.ToString("d")}.txt");
+            }
+
+            int _counts = _todaySurveillanceProcessesLogIn.Count(f => f == '\n');
+            for (int i = 1; i <= _counts; i++)
+            {
+                _todaySurveillanceProcessesLogOut = _todaySurveillanceProcessesLogIn.Split('\n')[i - 1];
+                if (_todaySurveillanceProcessesLogOut.Contains('|'))
+                    StaticVars._completedProcessesList.Add(new StaticVars.CompletedProcessesClass() { _processName = _todaySurveillanceProcessesLogOut.Split('|')[0], _processTime = Convert.ToDouble(_todaySurveillanceProcessesLogOut.Split('|')[1]), _processType = _todaySurveillanceProcessesLogOut.Split('|')[2] });
+            }
+
             try
-            { File.Delete(CheckSurveillanceLogDirectory() + $"{DateTime.Now.AddDays(-1).ToString("d")}.xlsx"); }
+            { File.Delete(CheckSurveillanceLogDirectory() + $"{DateTime.Now.AddDays(-1).ToString("d")}.txt"); }
             catch
             { }
-
-
-            return "";
         }
 
         private string CheckSurveillanceLogDirectory()
@@ -202,6 +241,42 @@ namespace Users_App
                 }
             }
             return _sourceOut;
+        }
+
+        private static BitmapImage BitmapToBitmapImage(Bitmap bitmap)
+        {
+            using (var memory = new MemoryStream())
+            {
+                bitmap.Save(memory, ImageFormat.Png);
+                memory.Position = 0;
+
+                var bitmapImage = new BitmapImage();
+                bitmapImage.BeginInit();
+                bitmapImage.StreamSource = memory;
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapImage.EndInit();
+                bitmapImage.Freeze();
+
+                return bitmapImage;
+            }
+        }
+
+        private Bitmap ScreenshootSave()
+        {
+            Graphics GH = Graphics.FromImage(BM as Image);
+            GH.CopyFromScreen(0, 0, 0, 0, BM.Size);
+            BM.Save(CheckSurveillanceLogDirectory() + $"{DateTime.Now.ToString("d")}.jpeg");
+            return BM;
+        }
+
+        private void Image_Encoder(BitmapImage bi, out byte[] _imgB)
+        {
+            PngBitmapEncoder pbe = new PngBitmapEncoder();
+            MemoryStream ms = new MemoryStream();
+            pbe.Frames.Add(BitmapFrame.Create(bi));
+            pbe.Save(ms);
+            byte[] imgB = ms.ToArray();
+            _imgB = imgB;
         }
 
         private bool SetAutorunValue(bool autorun)

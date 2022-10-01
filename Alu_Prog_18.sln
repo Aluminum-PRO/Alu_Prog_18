@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Admin_App", "Admin_App\Admi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Users_App", "Users_App\Users_App.csproj", "{A24C8007-DA93-4928-B24F-2E509076FCA0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Procesess Surveillance", "Procesess Surveillance\Procesess Surveillance.csproj", "{52671090-B311-4120-B487-A83C6DAFDD38}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{A24C8007-DA93-4928-B24F-2E509076FCA0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A24C8007-DA93-4928-B24F-2E509076FCA0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A24C8007-DA93-4928-B24F-2E509076FCA0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{52671090-B311-4120-B487-A83C6DAFDD38}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52671090-B311-4120-B487-A83C6DAFDD38}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52671090-B311-4120-B487-A83C6DAFDD38}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52671090-B311-4120-B487-A83C6DAFDD38}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

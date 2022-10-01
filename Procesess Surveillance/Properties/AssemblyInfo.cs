@@ -7,12 +7,12 @@ using System.Windows;
 // Общие сведения об этой сборке предоставляются следующим набором
 // набор атрибутов. Измените значения этих атрибутов, чтобы изменить сведения,
 // связанные со сборкой.
-[assembly: AssemblyTitle("Surveillance Admin")]
-[assembly: AssemblyDescription("Surveillance Admin - Просмотр всех запущенных процессов у пользователей")]
+[assembly: AssemblyTitle("Procesess Surveillance")]
+[assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Aluminum Company")]
-[assembly: AssemblyProduct("Surveillance Admin")]
-[assembly: AssemblyCopyright("Copyright © Aluminum Company 2022")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("Procesess Surveillance")]
+[assembly: AssemblyCopyright("Copyright ©  2022")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -51,5 +51,5 @@ using System.Windows;
 // Можно задать все значения или принять номера сборки и редакции по умолчанию 
 // используя "*", как показано ниже:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("0.1.0.1")]
-[assembly: AssemblyFileVersion("0.1.0.1")]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
