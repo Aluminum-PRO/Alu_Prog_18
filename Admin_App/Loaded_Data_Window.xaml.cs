@@ -122,7 +122,18 @@ namespace Admin_App
                 {
                     MessageBoxResult _result = MessageBox.Show(" Не предлагать больше этот вопрос?", "Surveillance Admin", MessageBoxButton.YesNo, MessageBoxImage.Question);
                     if (_result == MessageBoxResult.Yes)
-                    { StaticVars.Start_Creating_Shortcut = false; /*My_Hand.SaveData();*/ }
+                    { 
+                        StaticVars.Start_Creating_Shortcut = false;
+                        My_Hand.Set_Properties("StartCreatingShortcut", false, out bool Result);
+                        if (Result == true)
+                        { }
+                        else if (Result == false)
+                        {
+                            StaticVars.Start_Creating_Shortcut = true;
+                            
+                            MessageBox.Show(" Не удалось обновить данные. Проверьте подключение к интернету или обратитесь к разработчику за помощью. \n Aluminum.Company163@yandex.ru или https://vk.com/aluminum343", "Surveillance Admin", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+                    }
                 }
             }
             else if (File.Exists("C:\\Users\\" + StaticVars._userIdentyty + "\\Desktop\\Al-Store.lnk") && Properties.Settings.Default.First_Started == true)
