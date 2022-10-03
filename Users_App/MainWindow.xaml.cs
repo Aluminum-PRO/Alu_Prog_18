@@ -14,6 +14,7 @@ using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using Users_App.Classes;
 using Users_App.MySql_Services;
+using Users_App.Sevice;
 
 namespace Users_App
 {
@@ -36,7 +37,8 @@ namespace Users_App
             InitializeComponent();
             SetAutorunValue(true);
             StaticVars._mainSource = GetMainDirectiry();
-
+            StaticVars._pathErrorsLog = CheckErrorsLogDirectory();
+            my_Handler = new MySql_Handler();
             GetProcess();
         }
 
@@ -69,17 +71,17 @@ namespace Users_App
             }
         }
 
-        private async void SendSurveillanceProcessesLog()
+        private void SendSurveillanceProcessesLog()
         {
-            byte[] imgB;
+            byte[] _imgB;
 
-            Image_Encoder(BitmapToBitmapImage(ScreenshootSave()), out imgB);
-            //command.Parameters.Add("@image_main", MySqlDbType.Blob).Value = imgB;
+            Image_Encoder(BitmapToBitmapImage(ScreenshootSave()), out _imgB);
+            my_Handler.SendSurveillanceProcessesLog(SaveSurveillanceProcessesLogText(), _imgB);
+            System.Windows.Forms.MessageBox.Show("Test");
         }
 
         private void CheckOpenProcesses()
         {
-
             foreach (Process _processList in StaticVars._processesList)
             {
                 bool _checkProcessOpen = false;
@@ -87,16 +89,15 @@ namespace Users_App
                 {
                     foreach (StaticVars.OpenProcessesClass _openProcessesClass in StaticVars._openProcessesList)
                     {
-                        if (_processList.ProcessName.ToString() == _openProcessesClass._processName)
+                        if (_processList.ProcessName.ToString() == _openProcessesClass._processName && _processList.MainWindowTitle.ToString() == _openProcessesClass._processWindowName)
                         {
                             _checkProcessOpen = true;
                         }
                     }
                 }
-
                 if (!_checkProcessOpen)
                 {
-                    StaticVars._openProcessesList.Add(new StaticVars.OpenProcessesClass() { _processName = _processList.ProcessName.ToString(), _processStartedTime = DateTime.Now });
+                    StaticVars._openProcessesList.Add(new StaticVars.OpenProcessesClass() { _processName = _processList.ProcessName.ToString(), _processWindowName = _processList.MainWindowTitle.ToString(), _processStartedTime = DateTime.Now, _processBackground = Convert.ToBoolean(_processList.MainWindowHandle == IntPtr.Zero ? "true" : "false") });
                 }
             }
         }
@@ -127,20 +128,21 @@ namespace Users_App
                 {
                     foreach (StaticVars.CompletedProcessesClass _completedProcessesClass in StaticVars._completedProcessesList)
                     {
-                        if (_openProcessesClass._processName == _completedProcessesClass._processName)
+                        if (_openProcessesClass._processName == _completedProcessesClass._processName && _openProcessesClass._processWindowName == _completedProcessesClass._processWindowName)
                         {
                             _checkProcessCompletedStatus = true;
-                            _secondsTime = Convert.ToInt32((DateTime.Now - _openProcessesClass._processStartedTime).ToString("ss"));
+                            _secondsTime = Convert.ToInt32((DateTime.Now - _openProcessesClass._processStartedTime).TotalSeconds);
                             _millisecondsTime = Convert.ToInt32((DateTime.Now - _openProcessesClass._processStartedTime).ToString("ff"));
 
                             _completedProcessesClass._processTime += _secondsTime + _millisecondsTime / 100;
+                            _completedProcessesClass._processBackground = _openProcessesClass._processBackground;
                         }
                     }
                 }
 
                 if (!_checkProcessCompletedStatus)
                 {
-                    _secondsTime = Convert.ToInt32((DateTime.Now - _openProcessesClass._processStartedTime).ToString("ss"));
+                    _secondsTime = Convert.ToInt32((DateTime.Now - _openProcessesClass._processStartedTime).TotalSeconds);
                     _millisecondsTime = Convert.ToInt32((DateTime.Now - _openProcessesClass._processStartedTime).ToString("ff"));
                     bool _checkProcessSystem = false;
                     string _processType = "App";
@@ -156,7 +158,7 @@ namespace Users_App
                             if (_openProcessesClass._processName == _processSystemVirusClass)
                                 _processType = "Virus";
                         }
-                        StaticVars._completedProcessesList.Add(new StaticVars.CompletedProcessesClass() { _processName = _openProcessesClass._processName, _processTime = _secondsTime + _millisecondsTime / 100, _processType = _processType });
+                        StaticVars._completedProcessesList.Add(new StaticVars.CompletedProcessesClass() { _processWindowName = _openProcessesClass._processWindowName, _processName = _openProcessesClass._processName, _processTime = _secondsTime + _millisecondsTime / 100, _processType = _processType, _processBackground = _openProcessesClass._processBackground });
                     }
                 }
 
@@ -182,7 +184,7 @@ namespace Users_App
             string _outCompletedProcesses = "";
             foreach (StaticVars.CompletedProcessesClass _completedProcessesClass in StaticVars._completedProcessesList)
             {
-                _outCompletedProcesses += $"{_completedProcessesClass._processName}|{_completedProcessesClass._processTime.ToString("0.##")}|{_completedProcessesClass._processType}\n";
+                _outCompletedProcesses += $"{_completedProcessesClass._processWindowName}|{_completedProcessesClass._processName}|{_completedProcessesClass._processTime.ToString("0.##")}|{_completedProcessesClass._processType}|{_completedProcessesClass._processBackground}\n";
             }
             return _outCompletedProcesses;
         }
@@ -205,8 +207,23 @@ namespace Users_App
             for (int i = 1; i <= _counts; i++)
             {
                 _todaySurveillanceProcessesLogOut = _todaySurveillanceProcessesLogIn.Split('\n')[i - 1];
-                if (_todaySurveillanceProcessesLogOut.Contains('|'))
-                    StaticVars._completedProcessesList.Add(new StaticVars.CompletedProcessesClass() { _processName = _todaySurveillanceProcessesLogOut.Split('|')[0], _processTime = Convert.ToDouble(_todaySurveillanceProcessesLogOut.Split('|')[1]), _processType = _todaySurveillanceProcessesLogOut.Split('|')[2] });
+                try
+                {
+                    if (_todaySurveillanceProcessesLogOut.Contains('|'))
+                        StaticVars._completedProcessesList.Add(new StaticVars.CompletedProcessesClass()
+                        {
+                            _processWindowName = _todaySurveillanceProcessesLogOut.Split('|')[0],
+                            _processName = _todaySurveillanceProcessesLogOut.Split('|')[1],
+                            _processTime = Convert.ToDouble(_todaySurveillanceProcessesLogOut.Split('|')[2]),
+                            _processType = _todaySurveillanceProcessesLogOut.Split('|')[3],
+                            _processBackground = Convert.ToBoolean(_todaySurveillanceProcessesLogOut.Split('|')[4])
+                        });
+                }
+                catch (Exception ex)
+                {
+                    ErrorsSaves errorsSaves = new ErrorsSaves();
+                    errorsSaves.Recording_Errors(ex);
+                }
             }
 
             try
@@ -218,6 +235,16 @@ namespace Users_App
         private string CheckSurveillanceLogDirectory()
         {
             string _source = StaticVars._mainSource + "\\lib\\Surveillance Log\\";
+            if (!Directory.Exists(_source))
+            {
+                Directory.CreateDirectory(_source);
+            }
+            return _source;
+        }
+
+        private string CheckErrorsLogDirectory()
+        {
+            string _source = StaticVars._mainSource + "\\lib\\Errors Log\\";
             if (!Directory.Exists(_source))
             {
                 Directory.CreateDirectory(_source);

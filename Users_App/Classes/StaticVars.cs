@@ -11,8 +11,8 @@ namespace Users_App.Classes
 {
     public static class StaticVars
     {
-        //public static int ;
-        public static string _mainSource;
+        public static int _surveillanceProcessesLogId = 0;
+        public static string _mainSource, _pathErrorsLog, _userIdentyty;
         //public static bool ;
         public static List<Process> _processesList = null;
         public static List<CompletedProcessesClass> _completedProcessesList = null;
@@ -26,19 +26,21 @@ namespace Users_App.Classes
             "backgroundTaskHost", "FileCoAuth", "HxTsr", "MicrosoftEdgeUpdate", "GoogleUpdate", "sppsvc", "TrustedInstaller", "TiWorker", "OneDriveStandaloneUpdater", "Microsoft.SharePoint", "PilotshubApp",
             "wermgr", "MusNotification", "MusNotificationUx", "rundll32", "consent", "msfeedssync", "ielowutil", "LaunchTM", "ScreenClippingHost", "upfc", "SIHClient", "MSBuild", "SearchApp", "taskhostw",
             "SystemSettingsBroker", "Idle", "NETSTAT", "findstr"};
-        public static List<String> _processSystemVirusList = new List<String>() { "BackgroundDownload"};
+        public static List<String> _processSystemVirusList = new List<String>() { "BackgroundDownload" };
 
         public class CompletedProcessesClass
         {
-            public string _processName = "", _processType = "App";
+            public string _processName = "", _processWindowName = "", _processType = "App";
             public double _processTime = 0;
+            public bool _processBackground = false;
+
         }
 
         public class OpenProcessesClass
         {
-            public string _processName = "";
+            public string _processName = "", _processWindowName = "";
             public DateTime _processStartedTime;
-            //public bool _processBaned = false;
+            public bool _processBackground = false;
         }
     }
 }

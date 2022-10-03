@@ -1,0 +1,117 @@
+﻿<Window x:Class="Admin_App.Update_Window"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Admin_App"
+        mc:Ignorable="d"
+        Title="Al-Store" Height="175" Width="500" Background="Transparent" ResizeMode="NoResize" AllowsTransparency="False" WindowStartupLocation="CenterScreen">
+
+    <Border x:Name="Main_Border" CornerRadius="0" Background="#272537">
+        <Grid>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="70"/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <Border Height="40" VerticalAlignment="Top" MouseDown="Border_MouseDown" Background="Transparent">
+                    <TextBlock Text="Обновление Surveillance Admin" Foreground="White" FontSize="20" Margin="28 12 10 0" HorizontalAlignment="Left"/>
+                </Border>
+
+                <StackPanel Margin="0 10 8 0" VerticalAlignment="Top" HorizontalAlignment="Right" Orientation="Horizontal">
+                    <Button x:Name="ReSize_Min_But" Height="30" Width="30" Margin="5 2" Click="ReSize_Min_But_Click">
+                        <Button.RenderTransform>
+                            <ScaleTransform x:Name="Animated_ReSize_Min_But"/>
+                        </Button.RenderTransform>
+                        <Button.Triggers>
+                            <EventTrigger RoutedEvent="Button.MouseEnter">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                Storyboard.TargetName="Animated_ReSize_Min_But"
+                Storyboard.TargetProperty="(ScaleTransform.ScaleX)"
+                To="1.2" Duration="0:0:0.03"/>
+                                        <DoubleAnimation
+                Storyboard.TargetName="Animated_ReSize_Min_But"
+                Storyboard.TargetProperty="(ScaleTransform.ScaleY)"
+                To="1.2" Duration="0:0:0.03"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                            <EventTrigger RoutedEvent="Button.MouseLeave">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                Storyboard.TargetName="Animated_ReSize_Min_But"
+                Storyboard.TargetProperty="(ScaleTransform.ScaleX)"
+                To="1.0" Duration="0:0:0.03"/>
+                                        <DoubleAnimation
+                Storyboard.TargetName="Animated_ReSize_Min_But"
+                Storyboard.TargetProperty="(ScaleTransform.ScaleY)"
+                To="1.0" Duration="0:0:0.03"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Button.Triggers>
+                        <Button.Background>
+                            <ImageBrush ImageSource="Resources/Buttons/Minimize.png"/>
+                        </Button.Background>
+                    </Button>
+                    <Button x:Name="Close_But" Height="30" Width="30" Margin="5 2" Click="Close_But_Click" Cursor="Hand">
+                        <Button.RenderTransform>
+                            <ScaleTransform x:Name="Animated_Close_But"/>
+                        </Button.RenderTransform>
+                        <Button.Triggers>
+                            <EventTrigger RoutedEvent="Button.MouseEnter">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                Storyboard.TargetName="Animated_Close_But"
+                Storyboard.TargetProperty="(ScaleTransform.ScaleX)"
+                To="1.2" Duration="0:0:0.03"/>
+                                        <DoubleAnimation
+                Storyboard.TargetName="Animated_Close_But"
+                Storyboard.TargetProperty="(ScaleTransform.ScaleY)"
+                To="1.2" Duration="0:0:0.03"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                            <EventTrigger RoutedEvent="Button.MouseLeave">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                Storyboard.TargetName="Animated_Close_But"
+                Storyboard.TargetProperty="(ScaleTransform.ScaleX)"
+                To="1.0" Duration="0:0:0.03"/>
+                                        <DoubleAnimation
+                Storyboard.TargetName="Animated_Close_But"
+                Storyboard.TargetProperty="(ScaleTransform.ScaleY)"
+                To="1.0" Duration="0:0:0.03"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Button.Triggers>
+                        <Button.Background>
+                            <ImageBrush ImageSource="Resources/Buttons/Close.png"/>
+                        </Button.Background>
+                    </Button>
+                </StackPanel>
+                <StackPanel Grid.Row="1">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="30"/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Статус:" Foreground="White" FontSize="20" Margin="20 0 10 0" HorizontalAlignment="Left"/>
+                        <TextBlock Text="Инициализация файлов" x:Name="Status_TextBlock" Foreground="White" FontSize="20" Margin="92 0 10 0" HorizontalAlignment="Left"/>
+                        <TextBlock Text="Процесс:" Foreground="White" FontSize="20" Margin="20 0 10 0" HorizontalAlignment="Left" Grid.Row="1"/>
+                        <TextBlock Text="Запуск Updater-а" x:Name="Process_TextBlock" Foreground="White" FontSize="20" Margin="114 0 10 0" HorizontalAlignment="Left" Grid.Row="1"/>
+                        <TextBlock Text="{Binding ElementName=ProgressBar, Path=Value, StringFormat={}{0:0}%, UpdateSourceTrigger=PropertyChanged}" Foreground="White" FontSize="20" Margin="0 6 8 0" HorizontalAlignment="Right" Grid.Row="1"/>
+                    </Grid>
+                    <ProgressBar x:Name="ProgressBar" Height="9" Width="480" Margin="0 5 0 5" Value="23"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>
