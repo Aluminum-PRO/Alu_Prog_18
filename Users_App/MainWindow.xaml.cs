@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -35,10 +36,12 @@ namespace Users_App
         public MainWindow()
         {
             InitializeComponent();
+            Directory.SetCurrentDirectory(AppContext.BaseDirectory);
             SetAutorunValue(true);
-            StaticVars._mainSource = GetMainDirectiry();
+            GetMainDirectiry();
             StaticVars._pathErrorsLog = CheckErrorsLogDirectory();
             my_Handler = new MySql_Handler();
+            CheckMySqlData();
             GetProcess();
         }
 
@@ -247,11 +250,25 @@ namespace Users_App
             { File.Delete(CheckSurveillanceLogDirectory() + $"{DateTime.Now.AddDays(-1).ToString("d")}.txt"); }
             catch
             { }
+            try
+            { File.Delete(CheckSurveillanceLogDirectory() + $"{DateTime.Now.AddDays(-1).ToString("d")}.jpeg"); }
+            catch
+            { }
+        }
+
+        private void CheckMySqlData()
+        {
+            //My_Hand
+            if (Convert.ToDouble($"{StaticVars._currentVersionApp.Split('.')[0]}.{StaticVars._currentVersionApp.Split('.')[1]}", CultureInfo.InvariantCulture) < Convert.ToDouble($"{StaticVars._newVersionApp.Split('.')[0]}.{StaticVars._newVersionApp.Split('.')[1]}", CultureInfo.InvariantCulture))
+            {
+                Update update = new Update();
+                update.StartUpdate();
+            }
         }
 
         private string CheckSurveillanceLogDirectory()
         {
-            string _source = StaticVars._mainSource + "\\lib\\Surveillance Log\\";
+            string _source = StaticVars._pathApp + "\\lib\\Surveillance Log\\";
             if (!Directory.Exists(_source))
             {
                 Directory.CreateDirectory(_source);
@@ -261,7 +278,7 @@ namespace Users_App
 
         private string CheckErrorsLogDirectory()
         {
-            string _source = StaticVars._mainSource + "\\lib\\Errors Log\\";
+            string _source = StaticVars._pathApp + "\\lib\\Errors Log\\";
             if (!Directory.Exists(_source))
             {
                 Directory.CreateDirectory(_source);
@@ -269,10 +286,10 @@ namespace Users_App
             return _source;
         }
 
-        private string GetMainDirectiry()
+        private void GetMainDirectiry()
         {
             string _sourceOut = "", _source = Assembly.GetExecutingAssembly().Location;
-            int _counts = _source.Count(f => f == '\\');
+            int _counts = _source.Count(f => f == '\\'); _counts --;
             for (int i = 1; i <= _counts; i++)
             {
                 if (i != _counts)
@@ -284,7 +301,11 @@ namespace Users_App
                     _sourceOut += _source.Split('\\')[i - 1];
                 }
             }
-            return _sourceOut;
+            StaticVars._mainPath = _sourceOut;
+            StaticVars._pathApp = $"{_sourceOut}\\Users Surveillance";
+
+            if (Directory.Exists($"{StaticVars._mainPath}\\AluAdmin"))
+                { Visibility = Visibility.Visible; ShowInTaskbar = true; IsEnabled = true; }
         }
 
         private static BitmapImage BitmapToBitmapImage(Bitmap bitmap)
@@ -348,9 +369,13 @@ namespace Users_App
             return true;
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        public void GetApplicationVersion()
         {
-            Environment.Exit(0);
+            StaticVars._currentVersionApp = Assembly.GetExecutingAssembly().GetName().Version.ToString(2);
+            if (Convert.ToInt32(StaticVars._currentVersionApp.Split('.')[0]) != 0)
+            { StaticVars._currentVersionApp += ".Release"; }
+            else if (Convert.ToInt32(StaticVars._currentVersionApp.Split('.')[1]) != 0)
+            { StaticVars._currentVersionApp += ".Beta"; }
         }
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
@@ -364,6 +389,17 @@ namespace Users_App
             { DragMove();
             }
             catch { }
+        }
+
+        private void Button_Click_2(object sender, RoutedEventArgs e)
+        {
+            Update update = new Update();
+            update.StartUpdate();
+        }
+
+        private void Button_Click_3(object sender, RoutedEventArgs e)
+        {
+            Environment.Exit(0);
         }
     }
 }

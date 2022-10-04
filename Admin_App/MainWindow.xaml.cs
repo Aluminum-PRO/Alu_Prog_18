@@ -1,21 +1,10 @@
 ﻿using Admin_App.Classes;
-using Admin_App.User_Control;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace Admin_App
 {
@@ -31,20 +20,34 @@ namespace Admin_App
             public double _processTime = 0;
             public bool _processBackground = false;
         }
+
+        bool _isUpdate = false;
         public MainWindow()
         {
             InitializeComponent();
             WindowStyle = WindowStyle.None; /*Main_Border.CornerRadius = new CornerRadius(20);*/ AllowsTransparency = true;
+            if (Convert.ToDouble($"{StaticVars._currentVersionApp.Split('.')[0]}.{StaticVars._currentVersionApp.Split('.')[1]}", CultureInfo.InvariantCulture) < Convert.ToDouble($"{StaticVars._newVersionApp.Split('.')[0]}.{StaticVars._newVersionApp.Split('.')[1]}", CultureInfo.InvariantCulture))
+            {
+                Opacity = 0;
+                _isUpdate = true;
+                MessageBox.Show($" Доступна новая версия программы!\n\n Текущая версия: {StaticVars._currentVersionApp}\n Доступная версия: {StaticVars._newVersionApp}\n\n Нажмите \"OK\" для начала процесса обоновления...", "Surveillance Admin", MessageBoxButton.OK, MessageBoxImage.Information);
+                Update_Window update_Window = new Update_Window();
+                update_Window.Show();
+
+            }
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             Activate();
-            if (Convert.ToDouble($"{StaticVars._currentVersionApp.Split('.')[0]}.{StaticVars._currentVersionApp.Split('.')[1]}", CultureInfo.InvariantCulture) < Convert.ToDouble($"{StaticVars._newVersionApp.Split('.')[0]}.{StaticVars._newVersionApp.Split('.')[1]}", CultureInfo.InvariantCulture))
-            {
-                MessageBox.Show($" Доступна новая версия программы!\n\n Текущая версия: {StaticVars._currentVersionApp}\n Доступная версия: {StaticVars._newVersionApp}\n\n Нажмите \"OK\" для начала процесса обоновления...", "Surveillance Admin", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
+            if (_isUpdate)
+                Hide();
+            else
+                GetData();
+        }
 
+        private void GetData()
+        {
             //var plt = new ScottPlot.Plot(600, 400);
 
             string _todaySurveillanceProcessesLogIn = "", _todaySurveillanceProcessesLogOut = "";
@@ -81,8 +84,6 @@ namespace Admin_App
 
             Chart.Plot.SaveFig("pie_showEverything.png");
             Chart.Refresh();
-
-
         }
     }
 }

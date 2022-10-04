@@ -12,7 +12,7 @@ namespace Users_App.Classes
     public static class StaticVars
     {
         public static int _surveillanceProcessesLogId = 0;
-        public static string _mainSource, _pathErrorsLog, _userIdentyty;
+        public static string _mainPath, _pathApp, _pathErrorsLog, _userIdentyty, _referenceApp, _currentVersionApp, _newVersionApp;
         //public static bool ;
         public static List<Process> _processesList = null;
         public static List<CompletedProcessesClass> _completedProcessesList = null;

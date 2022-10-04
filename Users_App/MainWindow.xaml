@@ -5,13 +5,14 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Users_App"
         mc:Ignorable="d"
-        Title="Users Surveillance" Height="110" Width="100" WindowStyle="None" ResizeMode="CanMinimize" IsEnabled="True" Visibility="Visible" ShowInTaskbar="True">
+        Title="Users Surveillance" Height="122" Width="102" WindowStyle="None" ResizeMode="NoResize" IsEnabled="False" Visibility="Hidden" ShowInTaskbar="False" WindowStartupLocation="CenterScreen">
     <Grid>
-        <TextBlock Text="Users Surveillance"/>
+        <TextBlock Text="Users Surveillance" HorizontalAlignment="Center"/>
         <Border Height="20" VerticalAlignment="Top" MouseDown="Border_MouseDown" Background="Transparent"/>
-        <StackPanel Margin="3 3 3 0"  HorizontalAlignment="Right" VerticalAlignment="Bottom">
-            <Button Content="MySQL" Height="40" Width="80" Margin="0 3" Click="Button_Click_1"/>
-            <Button Content="Закрыть" Height="40" Width="80" Margin="0 3" Click="Button_Click"/>
+        <StackPanel Margin="3 3 3 0" VerticalAlignment="Bottom">
+            <Button Content="MySQL" Height="30" Width="80" Margin="0 3" Click="Button_Click_1"/>
+            <Button Content="Обновить" Height="30" Width="80" Margin="0 3" Click="Button_Click_2"/>
+            <Button Content="Закрыть" Height="30" Width="80" Margin="0 3" Click="Button_Click_3"/>
         </StackPanel>
         
     </Grid>

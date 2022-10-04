@@ -23,6 +23,7 @@ namespace Admin_App
         public Loaded_Data_Window()
         {
             InitializeComponent();
+            Directory.SetCurrentDirectory(AppContext.BaseDirectory);
             string[] args = Environment.GetCommandLineArgs();
             if (args.Length == 1)
             {
@@ -69,28 +70,26 @@ namespace Admin_App
             thread.SetApartmentState(ApartmentState.STA);
             thread.Start();
 
-            string Source = "";
-            string source = Assembly.GetExecutingAssembly().Location;
-            int counts = source.Count(f => f == '\\');
-            for (int i = 1; i <= counts; i++)
+            string _sourceOut = "", _source = Assembly.GetExecutingAssembly().Location;
+            int _counts = _source.Count(f => f == '\\'); _counts--;
+            for (int i = 1; i <= _counts; i++)
             {
-                if (i != counts)
+                if (i != _counts)
                 {
-                    Source += source.Split('\\')[i - 1] + '\\';
+                    _sourceOut += _source.Split('\\')[i - 1] + '\\';
                 }
-                else if (i == counts)
+                else if (i == _counts)
                 {
-                    Source += source.Split('\\')[i - 1];
+                    _sourceOut += _source.Split('\\')[i - 1];
                 }
             }
-
-            StaticVars._mainPath = Source;
-            StaticVars._pathSettings = Environment.ExpandEnvironmentVariables(StaticVars._mainPath + "\\lib\\Settings");
-            StaticVars._pathShortcut = Environment.ExpandEnvironmentVariables(StaticVars._mainPath + "\\lib\\Иконки ярлыков");
+            StaticVars._mainPath = _sourceOut;
+            StaticVars._pathApp = $"{_sourceOut}\\Surveillance Admin";
+            StaticVars._pathSettings = Environment.ExpandEnvironmentVariables(StaticVars._pathApp + "\\lib\\Settings");
+            StaticVars._pathShortcut = Environment.ExpandEnvironmentVariables(StaticVars._pathApp + "\\lib\\Иконки ярлыков");
             StaticVars._userIdentyty = Environment.UserName;
 
-            CheckCreateDirectory(StaticVars._pathSettings);
-
+            
             handler = new Handler();
             handler.GetApplicationVersion();
 
@@ -111,8 +110,9 @@ namespace Admin_App
 
         private void CheckShortcutCreate()
         {
-            if (!File.Exists("C:\\Users\\" + StaticVars._userIdentyty + "\\Desktop\\Surveillance Admin.lnk") && StaticVars.Start_Creating_Shortcut == true)
+            if (!File.Exists("C:\\Users\\" + StaticVars._userIdentyty + "\\Desktop\\Surveillance Admin.lnk") && StaticVars._startCreatingShortcut == true)
             {
+                Activate();
                 MessageBoxResult result = MessageBox.Show(" На вашем рабочем столе нет ярлыка 'Surveillance Admin'.\n\n   Создать?", "Surveillance Admin", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (result == MessageBoxResult.Yes)
                 {
@@ -123,13 +123,13 @@ namespace Admin_App
                     MessageBoxResult _result = MessageBox.Show(" Не предлагать больше этот вопрос?", "Surveillance Admin", MessageBoxButton.YesNo, MessageBoxImage.Question);
                     if (_result == MessageBoxResult.Yes)
                     { 
-                        StaticVars.Start_Creating_Shortcut = false;
+                        StaticVars._startCreatingShortcut = false;
                         My_Hand.Set_Properties("StartCreatingShortcut", false, out bool Result);
                         if (Result == true)
                         { }
                         else if (Result == false)
                         {
-                            StaticVars.Start_Creating_Shortcut = true;
+                            StaticVars._startCreatingShortcut = true;
                             
                             MessageBox.Show(" Не удалось обновить данные. Проверьте подключение к интернету или обратитесь к разработчику за помощью. \n Aluminum.Company163@yandex.ru или https://vk.com/aluminum343", "Surveillance Admin", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
