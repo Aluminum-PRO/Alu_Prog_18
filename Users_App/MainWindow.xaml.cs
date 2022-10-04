@@ -51,33 +51,50 @@ namespace Users_App
 
             GetSurveillanceProcessesLog();
             int _screenshootTime = 0;
-            while (true)
+            await Task.Run(() =>
             {
-                if (StaticVars._processesList != null)
-                    StaticVars._processesList.Clear();
-
-                StaticVars._processesList = Process.GetProcesses().ToList<Process>();
-                CheckOpenProcesses();
-                CheckCompletedProcesses();
-                SaveSurveillanceProcessesLog();
-                _screenshootTime++;
-                if (_screenshootTime >= 600)
+                while (true)
                 {
-                    _screenshootTime = 0;
-                    
-                    SendSurveillanceProcessesLog();
+                    if (StaticVars._processesList != null)
+                        StaticVars._processesList.Clear();
+
+                    StaticVars._processesList = Process.GetProcesses().ToList<Process>();
+                    CheckOpenProcesses();
+                    CheckCompletedProcesses();
+                    SaveSurveillanceProcessesLog();
+                    _screenshootTime++;
+                    if (_screenshootTime >= 600)
+                    {
+                        _screenshootTime = 0;
+
+                        SendSurveillanceProcessesLog();
+                    }
+                    Task.Delay(445);
                 }
-                await Task.Delay(445);
-            }
+            });
+            
         }
 
-        private void SendSurveillanceProcessesLog()
+        private async void SendSurveillanceProcessesLog()
         {
             byte[] _imgB;
 
-            Image_Encoder(BitmapToBitmapImage(ScreenshootSave()), out _imgB);
-            my_Handler.SendSurveillanceProcessesLog(SaveSurveillanceProcessesLogText(), _imgB);
-            System.Windows.Forms.MessageBox.Show("Test");
+            await Task.Run(() =>
+            {
+                while (true)
+                {
+                    try
+                    {
+                        Image_Encoder(BitmapToBitmapImage(ScreenshootSave()), out _imgB);
+                        my_Handler.SendSurveillanceProcessesLog(SaveSurveillanceProcessesLogText(), _imgB);
+                    }
+                    catch (Exception ex)
+                    {
+                        ErrorsSaves errorsSaves = new ErrorsSaves();
+                        errorsSaves.Recording_Errors(ex);
+                    }
+                }
+            });
         }
 
         private void CheckOpenProcesses()
@@ -329,6 +346,24 @@ namespace Users_App
                 return false;
             }
             return true;
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            Environment.Exit(0);
+        }
+
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+            SendSurveillanceProcessesLog();
+        }
+
+        private void Border_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            try
+            { DragMove();
+            }
+            catch { }
         }
     }
 }

@@ -5,6 +5,14 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Users_App"
         mc:Ignorable="d"
-        Title="Users Surveillance" Height="40" Width="40" WindowStyle="None" ResizeMode="NoResize" IsEnabled="False" Visibility="Hidden" ShowInTaskbar="False">
-    <Grid/>
+        Title="Users Surveillance" Height="110" Width="100" WindowStyle="None" ResizeMode="CanMinimize" IsEnabled="True" Visibility="Visible" ShowInTaskbar="True">
+    <Grid>
+        <TextBlock Text="Users Surveillance"/>
+        <Border Height="20" VerticalAlignment="Top" MouseDown="Border_MouseDown" Background="Transparent"/>
+        <StackPanel Margin="3 3 3 0"  HorizontalAlignment="Right" VerticalAlignment="Bottom">
+            <Button Content="MySQL" Height="40" Width="80" Margin="0 3" Click="Button_Click_1"/>
+            <Button Content="Закрыть" Height="40" Width="80" Margin="0 3" Click="Button_Click"/>
+        </StackPanel>
+        
+    </Grid>
 </Window>

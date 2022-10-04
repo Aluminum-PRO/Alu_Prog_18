@@ -6,7 +6,7 @@ namespace Users_App.MySql_Services
 {
     public class MySql_Connector
     {
-        private readonly MySqlConnection connection = new MySqlConnection("server=192.168.1.69/phpmyadmin;port=3306;username=admin;password=Qwerty9821;database=AlDb");
+        private readonly MySqlConnection connection = new MySqlConnection("server=AlSurDb;port=3306;username=Aluminum;password=Qwerty9821;database=AlDb");
 
         public void openConnection()
         {
