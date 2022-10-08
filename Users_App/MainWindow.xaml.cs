@@ -84,8 +84,6 @@ namespace Users_App
 
             await Task.Run(() =>
             {
-                while (true)
-                {
                     try
                     {
                         Image_Encoder(BitmapToBitmapImage(ScreenshootSave()), out _imgB);
@@ -96,7 +94,6 @@ namespace Users_App
                         ErrorsSaves errorsSaves = new ErrorsSaves();
                         errorsSaves.Recording_Errors(ex);
                     }
-                }
             });
         }
 
@@ -259,11 +256,11 @@ namespace Users_App
         private void CheckMySqlData()
         {
             //My_Hand
-            if (Convert.ToDouble($"{StaticVars._currentVersionApp.Split('.')[0]}.{StaticVars._currentVersionApp.Split('.')[1]}", CultureInfo.InvariantCulture) < Convert.ToDouble($"{StaticVars._newVersionApp.Split('.')[0]}.{StaticVars._newVersionApp.Split('.')[1]}", CultureInfo.InvariantCulture))
-            {
-                Update update = new Update();
-                update.StartUpdate();
-            }
+            //if (Convert.ToDouble($"{StaticVars._currentVersionApp.Split('.')[0]}.{StaticVars._currentVersionApp.Split('.')[1]}", CultureInfo.InvariantCulture) < Convert.ToDouble($"{StaticVars._newVersionApp.Split('.')[0]}.{StaticVars._newVersionApp.Split('.')[1]}", CultureInfo.InvariantCulture))
+            //{
+            //    Update update = new Update();
+            //    update.StartUpdate();
+            //}
         }
 
         private string CheckSurveillanceLogDirectory()
@@ -303,6 +300,8 @@ namespace Users_App
             }
             StaticVars._mainPath = _sourceOut;
             StaticVars._pathApp = $"{_sourceOut}\\Users Surveillance";
+            StaticVars._currentVersionApp = Assembly.GetExecutingAssembly().GetName().Version.ToString(2);
+            StaticVars._userIdentyty = Environment.UserName;
 
             if (Directory.Exists($"{StaticVars._mainPath}\\AluAdmin"))
                 { Visibility = Visibility.Visible; ShowInTaskbar = true; IsEnabled = true; }
@@ -328,6 +327,10 @@ namespace Users_App
 
         private Bitmap ScreenshootSave()
         {
+            try
+            { File.Delete(CheckSurveillanceLogDirectory() + $"{DateTime.Now.ToString("d")}.jpeg"); }
+            catch
+            { }
             Graphics GH = Graphics.FromImage(BM as Image);
             GH.CopyFromScreen(0, 0, 0, 0, BM.Size);
             BM.Save(CheckSurveillanceLogDirectory() + $"{DateTime.Now.ToString("d")}.jpeg");

@@ -31,6 +31,7 @@ namespace Users_App.MySql_Services
 
                 if (TabSurveillanceDb.Rows.Count > 0)
                 {
+                    My_Con.openConnection();
                     reader = null;
                     reader = command.ExecuteReader();
 
@@ -38,6 +39,7 @@ namespace Users_App.MySql_Services
                     {
                         StaticVars._surveillanceProcessesLogId = Convert.ToInt32(reader["Id"]);
                     }
+                    My_Con.closeConnection();
                 }
                 else
                 {
