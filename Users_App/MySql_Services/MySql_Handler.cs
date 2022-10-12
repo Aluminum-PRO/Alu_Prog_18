@@ -1,84 +1,133 @@
 ﻿using MySql.Data.MySqlClient;
 using System;
 using System.Data;
-using Users_App.Classes;
+using Users_App.Sevice;
+using static Users_App.Classes.StaticVars;
 
 namespace Users_App.MySql_Services
 {
     internal class MySql_Handler
     {
-        private MySql_Connector My_Con;
-        private MySqlCommand command;
+        private Handler handler;
+        private MySql_Connector MyConnector;
+        private MySqlDataAdapter MyAdapter;
+        private MySqlCommand MyCommand;
+        private MySqlDataReader MyReader;
         private DataTable TabSurveillanceDb;
-        //private DataTable Tab_Programs_Db;
-        //private DataTable Tab_Al_Store_Properties_Db;
-        private MySqlDataAdapter adapter;
-        private MySqlDataReader reader;
 
-        public void SendSurveillanceProcessesLog(string _surveillanceProcessesLog, byte[] _surveillanceScreenshoot)
+        public bool GetData()
         {
-            My_Con = new MySql_Connector();
-            adapter = new MySqlDataAdapter();
-
-            TabSurveillanceDb = new DataTable();
-            if (StaticVars._surveillanceProcessesLogId == 0)
+            MyConnector = new MySql_Connector();
+            MyCommand = new MySqlCommand("SELECT * FROM `TabSettingsDb` WHERE `id` = 1", MyConnector.getConnection());
+            if (MyConnector.openConnection())
             {
-                command = new MySqlCommand("SELECT * FROM `TabSurveillanceDb` WHERE `User` = @User AND `RecordingDay` = @RecordingDay", My_Con.getConnection());
-                command.Parameters.Add("@User", MySqlDbType.VarChar).Value = StaticVars._userIdentyty; command.Parameters.Add("@RecordingDay", MySqlDbType.VarChar).Value = DateTime.Now.ToString("d");
-
-                adapter.SelectCommand = command;
-                adapter.Fill(TabSurveillanceDb);
-
-                if (TabSurveillanceDb.Rows.Count > 0)
+                MyReader = null;
+                MyReader = MyCommand.ExecuteReader();
+                while (MyReader.Read())
                 {
-                    My_Con.openConnection();
-                    reader = null;
-                    reader = command.ExecuteReader();
-
-                    while (reader.Read())
-                    {
-                        StaticVars._surveillanceProcessesLogId = Convert.ToInt32(reader["Id"]);
-                    }
-                    My_Con.closeConnection();
+                    _updateFrequencySendLogs = Convert.ToInt32(MyReader["UpdateFrequencySendLog"]);
                 }
-                else
-                {
-                    command = new MySqlCommand("INSERT INTO `TabSurveillanceDb` (`User`, `SurveillanceProcessesLog`, `SurveillanceScreenshoot`, `RecordingDay`, `RecordingTime`) " +
-                "VALUES (@User, @SurveillanceProcessesLog, @SurveillanceScreenshoot, @RecordingDay, @RecordingTime)", My_Con.getConnection());
-
-                    command.Parameters.Add("@User", MySqlDbType.VarChar).Value = StaticVars._userIdentyty;
-                    command.Parameters.Add("@SurveillanceProcessesLog", MySqlDbType.Text).Value = _surveillanceProcessesLog;
-                    command.Parameters.Add("@SurveillanceScreenshoot", MySqlDbType.Blob).Value = _surveillanceScreenshoot;
-                    command.Parameters.Add("@RecordingDay", MySqlDbType.VarChar).Value = DateTime.Now.ToString("d");
-                    command.Parameters.Add("@RecordingTime", MySqlDbType.VarChar).Value = DateTime.Now.ToString("t");
-
-                    My_Con.openConnection();
-                    command.ExecuteNonQuery();
-                    My_Con.closeConnection();
-                }
+                MyConnector.closeConnection();
             }
             else
             {
-                //System.Windows.Forms.MessageBox.Show("Test 3");
-                command = new MySqlCommand($"UPDATE `TabSurveillanceDb` SET `SurveillanceProcessesLog` = @SurveillanceProcessesLog, `SurveillanceScreenshoot` = @SurveillanceScreenshoot,`RecordingTime` = @RecordingTime" +
-                " WHERE `TabSurveillanceDb`.`Id` = @Id",
-                My_Con.getConnection());
-
-                command.Parameters.Add("@Id", MySqlDbType.Int32).Value = StaticVars._surveillanceProcessesLogId;
-                command.Parameters.Add("@SurveillanceProcessesLog", MySqlDbType.Text).Value = _surveillanceProcessesLog;
-                command.Parameters.Add("@SurveillanceScreenshoot", MySqlDbType.Blob).Value = _surveillanceScreenshoot;
-                command.Parameters.Add("@RecordingTime", MySqlDbType.VarChar).Value = DateTime.Now.ToString("t");
-
-                My_Con.openConnection();
-
-                command.ExecuteNonQuery();
-
-                My_Con.closeConnection();
+                return false;
             }
 
+            MyAdapter = new MySqlDataAdapter(); TabSurveillanceDb = new DataTable();
+            MyCommand = new MySqlCommand("SELECT * FROM `TabSurveillanceDb` WHERE `User` = @User AND `RecordingDay` = @RecordingDay", MyConnector.getConnection());
+            MyCommand.Parameters.Add("@User", MySqlDbType.VarChar).Value = _userIdentyty; MyCommand.Parameters.Add("@RecordingDay", MySqlDbType.VarChar).Value = DateTime.Now.ToString("d");
+            MyAdapter.SelectCommand = MyCommand;
+            MyAdapter.Fill(TabSurveillanceDb);
+            if (TabSurveillanceDb.Rows.Count > 0)
+            {
+                if (MyConnector.openConnection())
+                {
+                    MyReader = null;
+                    MyReader = MyCommand.ExecuteReader();
+                    while (MyReader.Read()) { _surveillanceProcessesLogId = Convert.ToInt32(MyReader["Id"]); }
+                    MyConnector.closeConnection();
+                }
+                else
+                {
+                    return false;
+                }
 
+            }
+
+            MyCommand = new MySqlCommand("SELECT * FROM `TabUpdateDb` WHERE `id` = 2", MyConnector.getConnection());
+            if (MyConnector.openConnection())
+            {
+                MyReader = null;
+                MyReader = MyCommand.ExecuteReader();
+                while (MyReader.Read())
+                {
+                    _newVersionApp = MyReader["AppVersion"].ToString();
+                    _referenceApp = $"https://getfile.dokpub.com/yandex/get/{MyReader["AppReference"]}";
+                }
+                MyConnector.closeConnection();
+                handler = new Handler();
+                handler.GettingInformationAboutNeedUpdate();
+            }
+            else
+            {
+                return false;
+            }
+
+            return true;
         }
 
+        public void SendSurveillanceProcessesLog(string _surveillanceProcessesLog, byte[] _surveillanceScreenshoot, bool _newDay)
+        {
+            MyConnector = new MySql_Connector();
+            if (_surveillanceProcessesLogId == 0 || _newDay)
+            {
+                MyCommand = new MySqlCommand("INSERT INTO `TabSurveillanceDb` (`User`, `SurveillanceProcessesLog`, `SurveillanceScreenshoot`, `RecordingDay`, `RecordingTime`) " +
+                "VALUES (@User, @SurveillanceProcessesLog, @SurveillanceScreenshoot, @RecordingDay, @RecordingTime)", MyConnector.getConnection());
 
+                MyCommand.Parameters.Add("@User", MySqlDbType.VarChar).Value = _userIdentyty;
+                MyCommand.Parameters.Add("@SurveillanceProcessesLog", MySqlDbType.Text).Value = _surveillanceProcessesLog;
+                MyCommand.Parameters.Add("@SurveillanceScreenshoot", MySqlDbType.Blob).Value = _surveillanceScreenshoot;
+                MyCommand.Parameters.Add("@RecordingDay", MySqlDbType.VarChar).Value = DateTime.Now.ToString("d");
+                MyCommand.Parameters.Add("@RecordingTime", MySqlDbType.VarChar).Value = DateTime.Now.ToString("t");
+
+                MyConnector.openConnection(); MyCommand.ExecuteNonQuery(); MyConnector.closeConnection();
+            }
+            else
+            {
+                MyCommand = new MySqlCommand($"UPDATE `TabSurveillanceDb` SET `SurveillanceProcessesLog` = @SurveillanceProcessesLog, `SurveillanceScreenshoot` = @SurveillanceScreenshoot,`RecordingTime` = @RecordingTime" +
+                " WHERE `TabSurveillanceDb`.`Id` = @Id", MyConnector.getConnection());
+
+                MyCommand.Parameters.Add("@Id", MySqlDbType.Int32).Value = _surveillanceProcessesLogId;
+                MyCommand.Parameters.Add("@SurveillanceProcessesLog", MySqlDbType.Text).Value = _surveillanceProcessesLog;
+                MyCommand.Parameters.Add("@SurveillanceScreenshoot", MySqlDbType.Blob).Value = _surveillanceScreenshoot;
+                MyCommand.Parameters.Add("@RecordingTime", MySqlDbType.VarChar).Value = DateTime.Now.ToString("t");
+
+                MyConnector.openConnection(); MyCommand.ExecuteNonQuery(); MyConnector.closeConnection();
+
+                MyCommand = new MySqlCommand($"SELECT * FROM `TabSettingsDb` WHERE `id` = 1", MyConnector.getConnection());
+                MyConnector.openConnection();
+                MyReader = null;
+                MyReader = MyCommand.ExecuteReader();
+                while (MyReader.Read())
+                {
+                    _updateFrequencySendLogs = Convert.ToInt32(MyReader["UpdateFrequencySendLog"]);
+                }
+                MyConnector.closeConnection();
+            }
+        }
+
+        public void SendError(string _error)
+        {
+            MyConnector = new MySql_Connector();
+            MyCommand = new MySqlCommand("INSERT INTO `TabErrorsDb` (`User`, `Errors`, `RecordingTime`) " +
+                "VALUES (@User, @Errors, @RecordingTime)", MyConnector.getConnection());
+
+            MyCommand.Parameters.Add("@User", MySqlDbType.VarChar).Value = _userIdentyty;
+            MyCommand.Parameters.Add("@Errors", MySqlDbType.VarChar).Value = _error;
+            MyCommand.Parameters.Add("@RecordingTime", MySqlDbType.VarChar).Value = DateTime.Now.ToString();
+
+            MyConnector.openConnection(); MyCommand.ExecuteNonQuery(); MyConnector.closeConnection();
+        }
     }
 }

@@ -20,7 +20,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Users Surveillance\</OutputPath>
+    <OutputPath>bin\Users Surveillance\Users Surveillance App\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -106,6 +106,7 @@
     </ApplicationDefinition>
     <Compile Include="Classes\Internet.cs" />
     <Compile Include="Sevice\ErrorsSaves.cs" />
+    <Compile Include="Sevice\Handler.cs" />
     <Compile Include="Sevice\Update.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

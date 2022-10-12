@@ -5,14 +5,19 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Users_App"
         mc:Ignorable="d"
-        Title="Users Surveillance" Height="122" Width="102" WindowStyle="None" ResizeMode="NoResize" IsEnabled="False" Visibility="Hidden" ShowInTaskbar="False" WindowStartupLocation="CenterScreen">
+        Title="Users Surveillance" Height="220" Width="102" WindowStyle="None" ResizeMode="NoResize" IsEnabled="False" Visibility="Visible" ShowInTaskbar="False" WindowStartupLocation="CenterScreen">
     <Grid>
         <TextBlock Text="Users Surveillance" HorizontalAlignment="Center"/>
         <Border Height="20" VerticalAlignment="Top" MouseDown="Border_MouseDown" Background="Transparent"/>
         <StackPanel Margin="3 3 3 0" VerticalAlignment="Bottom">
+            <TextBlock x:Name="CurrentVersionTextBlock" Text="Version" HorizontalAlignment="Center"/>
+            <TextBlock x:Name="NewVersionTextBlock" Text="Version" HorizontalAlignment="Center"/>
+            <TextBlock x:Name="CurrentCountTextBlock" Text="Count" HorizontalAlignment="Center"/>
+            <TextBlock x:Name="CurrentSendCountTextBlock" Text="Count" HorizontalAlignment="Center"/>
             <Button Content="MySQL" Height="30" Width="80" Margin="0 3" Click="Button_Click_1"/>
             <Button Content="Обновить" Height="30" Width="80" Margin="0 3" Click="Button_Click_2"/>
-            <Button Content="Закрыть" Height="30" Width="80" Margin="0 3" Click="Button_Click_3"/>
+            <Button Content="Errors" Height="30" Width="80" Margin="0 3" Click="Button_Click_3"/>
+            <Button Content="Закрыть" Height="30" Width="80" Margin="0 3" Click="Button_Click_4"/>
         </StackPanel>
         
     </Grid>

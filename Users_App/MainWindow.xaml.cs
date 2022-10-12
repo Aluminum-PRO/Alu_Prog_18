@@ -4,18 +4,18 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
-using System.Windows.Interop;
 using System.Windows.Media.Imaging;
-using Users_App.Classes;
 using Users_App.MySql_Services;
 using Users_App.Sevice;
+using static System.Windows.Forms.AxHost;
+using static Users_App.Classes.StaticVars;
 
 namespace Users_App
 {
@@ -28,7 +28,7 @@ namespace Users_App
         [System.Runtime.InteropServices.DllImport("gdi32.dll")]
         public static extern bool DeleteObject(IntPtr hObject);
 
-        private MySql_Handler my_Handler;
+        private MySql_Handler MyHandler;
         private List<int> _openProcessesListId;
         private static Bitmap BM = new Bitmap(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
         #endregion
@@ -39,72 +39,119 @@ namespace Users_App
             Directory.SetCurrentDirectory(AppContext.BaseDirectory);
             SetAutorunValue(true);
             GetMainDirectiry();
-            StaticVars._pathErrorsLog = CheckErrorsLogDirectory();
-            my_Handler = new MySql_Handler();
-            CheckMySqlData();
-            GetProcess();
+            _pathErrorsLog = CheckErrorsLogDirectory();
+            MyHandler = new MySql_Handler();
+            try
+            {
+                if (!MyHandler.GetData())
+                {
+                    if (_isAdminLaunch)
+                        System.Windows.MessageBox.Show("Ошибка связанная с БД. Программа будет закрыта...");
+                    Environment.Exit(0);
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorsSaves errorsSaves = new ErrorsSaves();
+                errorsSaves.Recording_Errors(ex);
+            }
+            CurrentVersionTextBlock.Text = $"cur: {_currentVersionApp}";
+            NewVersionTextBlock.Text = $"new: {_newVersionApp}";
+            try
+            {
+                if (_isNeedUpdateApp)
+                { Update update = new Update(); update.StartUpdate(); }
+                else
+                { GetProcess(); }
+            }
+            catch (Exception ex)
+            {
+                ErrorsSaves errorsSaves = new ErrorsSaves();
+                errorsSaves.Recording_Errors(ex);
+            }
+
         }
 
         private async void GetProcess()
         {
-            StaticVars._processesList = new List<Process>();
-            StaticVars._completedProcessesList = new List<StaticVars.CompletedProcessesClass>();
-            StaticVars._openProcessesList = new List<StaticVars.OpenProcessesClass>();
+            _processesList = new List<Process>();
+            _completedProcessesList = new List<CompletedProcessesClass>();
+            _openProcessesList = new List<OpenProcessesClass>();
             _openProcessesListId = new List<int>();
 
             GetSurveillanceProcessesLog();
-            int _screenshootTime = 0;
-            await Task.Run(() =>
+            int _logSendingCounter = 0, _logSendCounter = 0; bool _isStareted = true;
+            await Task.Run(() => 
             {
                 while (true)
                 {
-                    if (StaticVars._processesList != null)
-                        StaticVars._processesList.Clear();
+                    if (_processesList != null)
+                        _processesList.Clear();
 
-                    StaticVars._processesList = Process.GetProcesses().ToList<Process>();
+                    _processesList = Process.GetProcesses().ToList<Process>();
                     CheckOpenProcesses();
                     CheckCompletedProcesses();
                     SaveSurveillanceProcessesLog();
-                    _screenshootTime++;
-                    if (_screenshootTime >= 600)
+                    _logSendingCounter++;
+                    Action action = () =>
+                    { CurrentCountTextBlock.Text = $"{_logSendingCounter}"; CurrentSendCountTextBlock.Text = $"{_logSendCounter}"; };
+                    if (!Dispatcher.CheckAccess()) // CheckAccess returns true if you're on the dispatcher thread
+                        Dispatcher.Invoke(action);
+                    else
+                        action();
+                    //System.Windows.Forms.MessageBox.Show($" Частота {_updateFrequencySendLogs}\nСейчас {_logSendingCounter}");
+                    if (_isStareted || _logSendingCounter >= _updateFrequencySendLogs)
                     {
-                        _screenshootTime = 0;
+                        _logSendingCounter = 0; _isStareted = false; _logSendCounter++;
 
                         SendSurveillanceProcessesLog();
                     }
-                    Task.Delay(445);
+                    Thread.Sleep(500);
                 }
-            });
+            }
+            );
+                
             
+
         }
 
         private async void SendSurveillanceProcessesLog()
         {
             byte[] _imgB;
+            bool _newDay = false;
 
+            if (_currentDay != DateTime.Now.Day)
+            {
+                _newDay = true;
+                _completedProcessesList.Clear();
+                _openProcessesList.Clear();
+                _openProcessesListId.Clear();
+                _currentDay = DateTime.Now.Day;
+            }
             await Task.Run(() =>
             {
-                    try
-                    {
-                        Image_Encoder(BitmapToBitmapImage(ScreenshootSave()), out _imgB);
-                        my_Handler.SendSurveillanceProcessesLog(SaveSurveillanceProcessesLogText(), _imgB);
-                    }
-                    catch (Exception ex)
-                    {
-                        ErrorsSaves errorsSaves = new ErrorsSaves();
-                        errorsSaves.Recording_Errors(ex);
-                    }
+                try
+                {
+                    Image_Encoder(BitmapToBitmapImage(ScreenshootSave()), out _imgB);
+                    MyHandler = new MySql_Handler();
+                    MyHandler.SendSurveillanceProcessesLog(SaveSurveillanceProcessesLogText(), _imgB, _newDay);
+                }
+                catch (Exception ex)
+                {
+                    ErrorsSaves errorsSaves = new ErrorsSaves();
+                    errorsSaves.Recording_Errors(ex);
+                }
             });
         }
 
         private void CheckOpenProcesses()
         {
-            foreach (Process _processList in StaticVars._processesList)
+            foreach (Process _processList in _processesList)
             {
                 bool _checkProcessOpen = false;
-                if (StaticVars._openProcessesList != null)
+                if (_openProcessesList != null)
                 {
-                    foreach (StaticVars.OpenProcessesClass _openProcessesClass in StaticVars._openProcessesList)
+                    foreach (OpenProcessesClass _openProcessesClass in _openProcessesList)
                     {
                         if (_processList.ProcessName.ToString() == _openProcessesClass._processName && _processList.MainWindowTitle.ToString() == _openProcessesClass._processWindowName)
                         {
@@ -114,24 +161,24 @@ namespace Users_App
                 }
                 if (!_checkProcessOpen)
                 {
-                    StaticVars._openProcessesList.Add(new StaticVars.OpenProcessesClass() { _processName = _processList.ProcessName.ToString(), _processWindowName = _processList.MainWindowTitle.ToString(), _processStartedTime = DateTime.Now, _processBackground = Convert.ToBoolean(_processList.MainWindowHandle == IntPtr.Zero ? "true" : "false") });
+                    _openProcessesList.Add(new OpenProcessesClass() { _processName = _processList.ProcessName.ToString(), _processWindowName = _processList.MainWindowTitle.ToString(), _processStartedTime = DateTime.Now, _processBackground = Convert.ToBoolean(_processList.MainWindowHandle == IntPtr.Zero ? "true" : "false") });
                 }
             }
         }
 
         private void CheckCompletedProcesses()
         {
-            if (StaticVars._openProcessesList == null)
+            if (_openProcessesList == null)
                 return;
             if (_openProcessesListId != null)
                 _openProcessesListId.Clear();
             int k = -1;
-            foreach (StaticVars.OpenProcessesClass _openProcessesClass in StaticVars._openProcessesList)
+            foreach (OpenProcessesClass _openProcessesClass in _openProcessesList)
             {
                 bool _checkProcessOpenStatus = false;
                 k++;
 
-                foreach (Process _processList in StaticVars._processesList)
+                foreach (Process _processList in _processesList)
                 {
                     if (_openProcessesClass._processName == _processList.ProcessName.ToString())
                     {
@@ -140,10 +187,10 @@ namespace Users_App
                 }
 
                 bool _checkProcessCompletedStatus = false;
-                double  _secondsTime = 0, _millisecondsTime = 0;
-                if (StaticVars._completedProcessesList != null)
+                double _secondsTime = 0, _millisecondsTime = 0;
+                if (_completedProcessesList != null)
                 {
-                    foreach (StaticVars.CompletedProcessesClass _completedProcessesClass in StaticVars._completedProcessesList)
+                    foreach (CompletedProcessesClass _completedProcessesClass in _completedProcessesList)
                     {
                         if (_openProcessesClass._processName == _completedProcessesClass._processName && _openProcessesClass._processWindowName == _completedProcessesClass._processWindowName)
                         {
@@ -163,19 +210,19 @@ namespace Users_App
                     _millisecondsTime = Convert.ToInt32((DateTime.Now - _openProcessesClass._processStartedTime).ToString("ff"));
                     bool _checkProcessSystem = false;
                     string _processType = "App";
-                    foreach (String _processSystemClass in StaticVars._processSystemList)
+                    foreach (String _processSystemClass in _processSystemList)
                     {
                         if (_openProcessesClass._processName == _processSystemClass)
                             _checkProcessSystem = true;
                     }
                     if (!_checkProcessSystem)
                     {
-                        foreach (String _processSystemVirusClass in StaticVars._processSystemVirusList)
+                        foreach (String _processSystemVirusClass in _processSystemVirusList)
                         {
                             if (_openProcessesClass._processName == _processSystemVirusClass)
                                 _processType = "Virus";
                         }
-                        StaticVars._completedProcessesList.Add(new StaticVars.CompletedProcessesClass() { _processWindowName = _openProcessesClass._processWindowName, _processName = _openProcessesClass._processName, _processTime = _secondsTime + _millisecondsTime / 100, _processType = _processType, _processBackground = _openProcessesClass._processBackground });
+                        _completedProcessesList.Add(new CompletedProcessesClass() { _processWindowName = _openProcessesClass._processWindowName, _processName = _openProcessesClass._processName, _processTime = _secondsTime + _millisecondsTime / 100, _processType = _processType, _processBackground = _openProcessesClass._processBackground });
                     }
                 }
 
@@ -190,7 +237,7 @@ namespace Users_App
             {
                 foreach (int _openProcessesClassId in _openProcessesListId)
                 {
-                    StaticVars._openProcessesList.RemoveAt(_openProcessesClassId);
+                    _openProcessesList.RemoveAt(_openProcessesClassId);
                 }
                 CheckCompletedProcesses();
             }
@@ -199,7 +246,7 @@ namespace Users_App
         private string SaveSurveillanceProcessesLogText()
         {
             string _outCompletedProcesses = "";
-            foreach (StaticVars.CompletedProcessesClass _completedProcessesClass in StaticVars._completedProcessesList)
+            foreach (CompletedProcessesClass _completedProcessesClass in _completedProcessesList)
             {
                 _outCompletedProcesses += $"{_completedProcessesClass._processWindowName}|{_completedProcessesClass._processName}|{_completedProcessesClass._processTime.ToString("0.##")}|{_completedProcessesClass._processType}|{_completedProcessesClass._processBackground}\n";
             }
@@ -220,21 +267,33 @@ namespace Users_App
                 _todaySurveillanceProcessesLogIn = File.ReadAllText(CheckSurveillanceLogDirectory() + $"{DateTime.Now.ToString("d")}.txt");
             }
 
-            int _counts = _todaySurveillanceProcessesLogIn.Count(f => f == '\n');
-            for (int i = 1; i <= _counts; i++)
+            int _countsProcess = _todaySurveillanceProcessesLogIn.Count(f => f == '\n');
+            int _countsSeparets;
+            for (int i = 1; i <= _countsProcess; i++)
             {
                 _todaySurveillanceProcessesLogOut = _todaySurveillanceProcessesLogIn.Split('\n')[i - 1];
                 try
                 {
+                    _countsSeparets = _todaySurveillanceProcessesLogOut.Count(f => f == '|');
                     if (_todaySurveillanceProcessesLogOut.Contains('|'))
-                        StaticVars._completedProcessesList.Add(new StaticVars.CompletedProcessesClass()
-                        {
-                            _processWindowName = _todaySurveillanceProcessesLogOut.Split('|')[0],
-                            _processName = _todaySurveillanceProcessesLogOut.Split('|')[1],
-                            _processTime = Convert.ToDouble(_todaySurveillanceProcessesLogOut.Split('|')[2]),
-                            _processType = _todaySurveillanceProcessesLogOut.Split('|')[3],
-                            _processBackground = Convert.ToBoolean(_todaySurveillanceProcessesLogOut.Split('|')[4])
-                        });
+                        if (_countsSeparets == 4)
+                            _completedProcessesList.Add(new CompletedProcessesClass()
+                            {
+                                _processWindowName = _todaySurveillanceProcessesLogOut.Split('|')[0],
+                                _processName = _todaySurveillanceProcessesLogOut.Split('|')[1],
+                                _processTime = Convert.ToDouble(_todaySurveillanceProcessesLogOut.Split('|')[2]),
+                                _processType = _todaySurveillanceProcessesLogOut.Split('|')[3],
+                                _processBackground = Convert.ToBoolean(_todaySurveillanceProcessesLogOut.Split('|')[4])
+                            });
+                        else if (_countsSeparets > 4)
+                            _completedProcessesList.Add(new CompletedProcessesClass()
+                            {
+                                _processWindowName = _todaySurveillanceProcessesLogOut.Split('|')[_countsSeparets - 4],
+                                _processName = _todaySurveillanceProcessesLogOut.Split('|')[_countsSeparets - 3],
+                                _processTime = Convert.ToDouble(_todaySurveillanceProcessesLogOut.Split('|')[_countsSeparets - 2]),
+                                _processType = _todaySurveillanceProcessesLogOut.Split('|')[_countsSeparets - 1],
+                                _processBackground = Convert.ToBoolean(_todaySurveillanceProcessesLogOut.Split('|')[_countsSeparets])
+                            });
                 }
                 catch (Exception ex)
                 {
@@ -253,19 +312,9 @@ namespace Users_App
             { }
         }
 
-        private void CheckMySqlData()
-        {
-            //My_Hand
-            //if (Convert.ToDouble($"{StaticVars._currentVersionApp.Split('.')[0]}.{StaticVars._currentVersionApp.Split('.')[1]}", CultureInfo.InvariantCulture) < Convert.ToDouble($"{StaticVars._newVersionApp.Split('.')[0]}.{StaticVars._newVersionApp.Split('.')[1]}", CultureInfo.InvariantCulture))
-            //{
-            //    Update update = new Update();
-            //    update.StartUpdate();
-            //}
-        }
-
         private string CheckSurveillanceLogDirectory()
         {
-            string _source = StaticVars._pathApp + "\\lib\\Surveillance Log\\";
+            string _source = _mainPath + "\\Logs\\Surveillance Log\\";
             if (!Directory.Exists(_source))
             {
                 Directory.CreateDirectory(_source);
@@ -275,7 +324,7 @@ namespace Users_App
 
         private string CheckErrorsLogDirectory()
         {
-            string _source = StaticVars._pathApp + "\\lib\\Errors Log\\";
+            string _source = _mainPath + "\\Logs\\Errors Log\\";
             if (!Directory.Exists(_source))
             {
                 Directory.CreateDirectory(_source);
@@ -286,7 +335,7 @@ namespace Users_App
         private void GetMainDirectiry()
         {
             string _sourceOut = "", _source = Assembly.GetExecutingAssembly().Location;
-            int _counts = _source.Count(f => f == '\\'); _counts --;
+            int _counts = _source.Count(f => f == '\\'); _counts--;
             for (int i = 1; i <= _counts; i++)
             {
                 if (i != _counts)
@@ -298,13 +347,14 @@ namespace Users_App
                     _sourceOut += _source.Split('\\')[i - 1];
                 }
             }
-            StaticVars._mainPath = _sourceOut;
-            StaticVars._pathApp = $"{_sourceOut}\\Users Surveillance";
-            StaticVars._currentVersionApp = Assembly.GetExecutingAssembly().GetName().Version.ToString(2);
-            StaticVars._userIdentyty = Environment.UserName;
+            _mainPath = _sourceOut;
+            _pathApp = $"{_sourceOut}\\Users Surveillance App";
+            GetApplicationVersion();
 
-            if (Directory.Exists($"{StaticVars._mainPath}\\AluAdmin"))
-                { Visibility = Visibility.Visible; ShowInTaskbar = true; IsEnabled = true; }
+            _userIdentyty = Environment.UserName;
+            _currentDay = DateTime.Now.Day;
+            if (Directory.Exists($"{_mainPath}\\AluAdmin"))
+            { Visibility = Visibility.Visible; ShowInTaskbar = true; IsEnabled = true; _isAdminLaunch = true; }
         }
 
         private static BitmapImage BitmapToBitmapImage(Bitmap bitmap)
@@ -374,35 +424,31 @@ namespace Users_App
 
         public void GetApplicationVersion()
         {
-            StaticVars._currentVersionApp = Assembly.GetExecutingAssembly().GetName().Version.ToString(2);
-            if (Convert.ToInt32(StaticVars._currentVersionApp.Split('.')[0]) != 0)
-            { StaticVars._currentVersionApp += ".Release"; }
-            else if (Convert.ToInt32(StaticVars._currentVersionApp.Split('.')[1]) != 0)
-            { StaticVars._currentVersionApp += ".Beta"; }
+            string _stage = "", _version = Assembly.GetExecutingAssembly().GetName().Version.ToString(3);
+            if (Convert.ToInt32(_version.Split('.')[0]) != 0)
+            { _stage = "Release"; }
+            else if (Convert.ToInt32(_version.Split('.')[1]) != 0)
+            { _stage = "Beta"; }
+            _version = Assembly.GetExecutingAssembly().GetName().Version.ToString(3);
+            if (Convert.ToInt32(_version.Split('.')[2]) != 0)
+                _currentVersionApp = $"{_version}.{_stage}";
+            else
+                _currentVersionApp = $"{Assembly.GetExecutingAssembly().GetName().Version.ToString(2)}.{_stage}";
         }
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
-        {
-            SendSurveillanceProcessesLog();
-        }
+        { SendSurveillanceProcessesLog(); }
 
         private void Border_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            try
-            { DragMove();
-            }
-            catch { }
-        }
+        { try { DragMove(); } catch { } }
 
         private void Button_Click_2(object sender, RoutedEventArgs e)
-        {
-            Update update = new Update();
-            update.StartUpdate();
-        }
+        { Update update = new Update(); update.StartUpdate(); }
 
         private void Button_Click_3(object sender, RoutedEventArgs e)
-        {
-            Environment.Exit(0);
-        }
+        { if (File.Exists(_pathErrorsLog + @"\Errors Log.txt")) try { Process.Start(_pathErrorsLog + @"\Errors Log.txt"); } catch (Exception ex) { ErrorsSaves errorsSaves = new ErrorsSaves(); errorsSaves.Recording_Errors(ex); } }
+
+        private void Button_Click_4(object sender, RoutedEventArgs e)
+        { Environment.Exit(0); }
     }
 }

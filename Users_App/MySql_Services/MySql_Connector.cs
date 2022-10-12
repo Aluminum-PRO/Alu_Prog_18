@@ -8,20 +8,23 @@ namespace Users_App.MySql_Services
     {
         private readonly MySqlConnection connection = new MySqlConnection("server=AlSurDb;port=3306;username=Aluminum;password=2ap_yywp92/i1NZn;database=AlDb");
 
-        public void openConnection()
+        public bool openConnection()
         {
             if (connection.State == System.Data.ConnectionState.Closed)
             {
                 try
                 {
                     connection.Open();
+                    return true;
                 }
                 catch(Exception ex)
                 {
                     ErrorsSaves errorsSaves = new ErrorsSaves();
-                    errorsSaves.Recording_Errors(ex);
+                    errorsSaves.Recording_Errors(ex, false);
+                    return false;
                 }
             }
+            else return true;
         }
 
         public void closeConnection()
@@ -35,7 +38,7 @@ namespace Users_App.MySql_Services
                 catch (Exception ex)
                 {
                     ErrorsSaves errorsSaves = new ErrorsSaves();
-                    errorsSaves.Recording_Errors(ex);
+                    errorsSaves.Recording_Errors(ex, false);
                 }
             }
         }

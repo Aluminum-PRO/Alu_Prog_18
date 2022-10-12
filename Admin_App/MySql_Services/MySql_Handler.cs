@@ -11,21 +11,16 @@ namespace Admin_App.MySql_Services
 {
     internal class MySql_Handler
     {
-        private MySql_Connector My_Con;
-        private MySqlCommand command;
-        private DataTable TableSurveillanceDb;
-        //private DataTable Tab_Programs_Db;
-        //private DataTable Tab_Al_Store_Properties_Db;
-        private MySqlDataAdapter adapter;
-        private MySqlDataReader reader;
+        private MySql_Connector MyConnector;
+        private MySqlDataAdapter MyAdapter;
+        private MySqlCommand MyCommand;
+        private MySqlDataReader MyReader;
+        private DataTable TabSurveillanceDb;
 
         public void Getting_Data()
         {
-            My_Con = new MySql_Connector();
-
-            adapter = new MySqlDataAdapter();
-
-            command = new MySqlCommand("SELECT * FROM `Tab_Accounts_Db` WHERE `id` = 1; SELECT * FROM `Tab_Al_Store_Db` WHERE `id` = 2; SELECT * FROM `Tab_Al_Store_Db` WHERE `id` = 3", My_Con.getConnection());
+            MyConnector = new MySql_Connector(); MyAdapter = new MySqlDataAdapter();
+            MyCommand = new MySqlCommand("SELECT * FROM `TabUpdateDb` WHERE `id` = 1; SELECT * FROM `Tab_Al_Store_Db` WHERE `id` = 2; SELECT * FROM `Tab_Al_Store_Db` WHERE `id` = 3", My_Con.getConnection());
 
             My_Con.openConnection();
 
