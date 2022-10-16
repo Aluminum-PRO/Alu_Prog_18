@@ -2,11 +2,12 @@
 using IWshRuntimeLibrary;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Windows;
-using File = System.IO.File;
+using static Admin_App.Classes.StaticVars;
 
 namespace Admin_App.Services
 {
@@ -61,11 +62,46 @@ namespace Admin_App.Services
 
         public void GetApplicationVersion()
         {
-            StaticVars._currentVersionApp = Assembly.GetExecutingAssembly().GetName().Version.ToString(2);
-            if (Convert.ToInt32(StaticVars._currentVersionApp.Split('.')[0]) != 0)
-            { StaticVars._currentVersionApp += ".Release"; }
-            else if (Convert.ToInt32(StaticVars._currentVersionApp.Split('.')[1]) != 0)
-            { StaticVars._currentVersionApp += ".Beta"; }
+            string _stage = "", _version = Assembly.GetExecutingAssembly().GetName().Version.ToString(3);
+            if (Convert.ToInt32(_version.Split('.')[0]) != 0)
+            { _stage = "Release"; }
+            else if (Convert.ToInt32(_version.Split('.')[1]) != 0)
+            { _stage = "Beta"; }
+            _version = Assembly.GetExecutingAssembly().GetName().Version.ToString(3);
+            if (Convert.ToInt32(_version.Split('.')[2]) != 0)
+                _currentVersionApp = $"{_version}.{_stage}";
+            else
+                _currentVersionApp = $"{Assembly.GetExecutingAssembly().GetName().Version.ToString(2)}.{_stage}";
+        }
+
+        public void GettingInformationAboutNeedUpdate()
+        {
+            if (Convert.ToDouble($"{_currentVersionApp.Split('.')[0]}.{_currentVersionApp.Split('.')[1]}", CultureInfo.InvariantCulture) < Convert.ToDouble($"{_newVersionApp.Split('.')[0]}.{_newVersionApp.Split('.')[1]}", CultureInfo.InvariantCulture))
+            {
+                _isNeedUpdateApp = true;
+            }
+            else if (Convert.ToDouble($"{_currentVersionApp.Split('.')[0]}.{_currentVersionApp.Split('.')[1]}", CultureInfo.InvariantCulture) > Convert.ToDouble($"{_newVersionApp.Split('.')[0]}.{_newVersionApp.Split('.')[1]}", CultureInfo.InvariantCulture))
+            {
+                _isCurrentVersionAppNewer = true;
+            }
+            else if (Convert.ToDouble($"{_currentVersionApp.Split('.')[0]}.{_currentVersionApp.Split('.')[1]}", CultureInfo.InvariantCulture) == Convert.ToDouble($"{_newVersionApp.Split('.')[0]}.{_newVersionApp.Split('.')[1]}", CultureInfo.InvariantCulture))
+            {
+                if (_currentVersionApp.Count(f => f == '.') == 2 && _newVersionApp.Count(f => f == '.') == 3)
+                {
+                    _isNeedUpdateApp = true;
+                }
+                else if (_currentVersionApp.Count(f => f == '.') == 3 && _newVersionApp.Count(f => f == '.') == 2)
+                {
+                    _isCurrentVersionAppNewer = true;
+                }
+                else if (_currentVersionApp.Count(f => f == '.') == 3 && _newVersionApp.Count(f => f == '.') == 3)
+                {
+                    if (Convert.ToInt32(_currentVersionApp.Split('.')[2], CultureInfo.InvariantCulture) < Convert.ToInt32(_newVersionApp.Split('.')[2], CultureInfo.InvariantCulture))
+                        _isNeedUpdateApp = true;
+                    if (Convert.ToInt32(_currentVersionApp.Split('.')[2], CultureInfo.InvariantCulture) > Convert.ToInt32(_newVersionApp.Split('.')[2], CultureInfo.InvariantCulture))
+                        _isCurrentVersionAppNewer = true;
+                }
+            }
         }
 
         //public void SaveSettings()

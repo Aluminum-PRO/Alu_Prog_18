@@ -7,8 +7,140 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         
         mc:Ignorable="d"
-        Title="MainWindow" Height="1200" Width="1800" Loaded="Window_Loaded">
-    <Grid>
-        <WpfPlot Name="Chart" Height="1100" Width="1670" HorizontalAlignment="Left" Margin="10 0"/>
-    </Grid>
+        Title="Al-Store" Height="720" Width="1130" MinHeight="720" MinWidth="1130" Loaded="Window_Loaded" Background="Transparent" ResizeMode="CanResizeWithGrip" AllowsTransparency="False" WindowStartupLocation="CenterScreen">
+
+    <Border x:Name="Main_Border" CornerRadius="0" Background="#272537" BorderBrush="Gray" BorderThickness="0.4">
+        <Grid>
+            <Frame x:Name="Main_Frame" NavigationUIVisibility="Hidden" Navigating="Main_Frame_Navigating" x:FieldModifier="public"></Frame>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="45"/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <Border Height="40" VerticalAlignment="Top" MouseDown="Border_MouseDown" Background="Transparent"/>
+
+                <StackPanel Margin="0 10 8 0" VerticalAlignment="Top" HorizontalAlignment="Right" Orientation="Horizontal">
+                    <Button x:Name="ReSize_Min_But" Height="30" Width="30" Margin="5 2" Click="ReSize_Min_But_Click"
+                        Style="{StaticResource MaterialDesignFlatDarkBgButton}">
+                        <Button.RenderTransform>
+                            <ScaleTransform x:Name="Animated_ReSize_Min_But"/>
+                        </Button.RenderTransform>
+                        <Button.Triggers>
+                            <EventTrigger RoutedEvent="Button.MouseEnter">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                Storyboard.TargetName="Animated_ReSize_Min_But"
+                Storyboard.TargetProperty="(ScaleTransform.ScaleX)"
+                To="1.2" Duration="0:0:0.03"/>
+                                        <DoubleAnimation
+                Storyboard.TargetName="Animated_ReSize_Min_But"
+                Storyboard.TargetProperty="(ScaleTransform.ScaleY)"
+                To="1.2" Duration="0:0:0.03"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                            <EventTrigger RoutedEvent="Button.MouseLeave">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                Storyboard.TargetName="Animated_ReSize_Min_But"
+                Storyboard.TargetProperty="(ScaleTransform.ScaleX)"
+                To="1.0" Duration="0:0:0.03"/>
+                                        <DoubleAnimation
+                Storyboard.TargetName="Animated_ReSize_Min_But"
+                Storyboard.TargetProperty="(ScaleTransform.ScaleY)"
+                To="1.0" Duration="0:0:0.03"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Button.Triggers>
+                        <Button.Background>
+                            <ImageBrush ImageSource="Resources/Buttons/Minimize.png"/>
+                        </Button.Background>
+                    </Button>
+                    <Button x:Name="ReSize_Max_But" Height="30" Width="30" Margin="5 2" Click="ReSize_Max_But_Click"
+                        Style="{StaticResource MaterialDesignFlatDarkBgButton}">
+                        <Button.RenderTransform>
+                            <ScaleTransform x:Name="Animated_ReSize_Max_But"/>
+                        </Button.RenderTransform>
+                        <Button.Triggers>
+                            <EventTrigger RoutedEvent="Button.MouseEnter">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                Storyboard.TargetName="Animated_ReSize_Max_But"
+                Storyboard.TargetProperty="(ScaleTransform.ScaleX)"
+                To="1.2" Duration="0:0:0.03"/>
+                                        <DoubleAnimation
+                Storyboard.TargetName="Animated_ReSize_Max_But"
+                Storyboard.TargetProperty="(ScaleTransform.ScaleY)"
+                To="1.2" Duration="0:0:0.03"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                            <EventTrigger RoutedEvent="Button.MouseLeave">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                Storyboard.TargetName="Animated_ReSize_Max_But"
+                Storyboard.TargetProperty="(ScaleTransform.ScaleX)"
+                To="1.0" Duration="0:0:0.03"/>
+                                        <DoubleAnimation
+                Storyboard.TargetName="Animated_ReSize_Max_But"
+                Storyboard.TargetProperty="(ScaleTransform.ScaleY)"
+                To="1.0" Duration="0:0:0.03"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Button.Triggers>
+                        <Button.Background>
+                            <ImageBrush ImageSource="Resources/Buttons/Maximize1.png"/>
+                        </Button.Background>
+                    </Button>
+                    <Button x:Name="Close_But" 
+                        Height="30" Width="30" 
+                        Margin="5 2" 
+                        Style="{StaticResource MaterialDesignFlatDarkBgButton}" Click="Close_But_Click">
+                        <Button.RenderTransform>
+                            <ScaleTransform x:Name="Animated_Close_But"/>
+                        </Button.RenderTransform>
+                        <Button.Triggers>
+                            <EventTrigger RoutedEvent="Button.MouseEnter">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                Storyboard.TargetName="Animated_Close_But"
+                Storyboard.TargetProperty="(ScaleTransform.ScaleX)"
+                To="1.2" Duration="0:0:0.03"/>
+                                        <DoubleAnimation
+                Storyboard.TargetName="Animated_Close_But"
+                Storyboard.TargetProperty="(ScaleTransform.ScaleY)"
+                To="1.2" Duration="0:0:0.03"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                            <EventTrigger RoutedEvent="Button.MouseLeave">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                Storyboard.TargetName="Animated_Close_But"
+                Storyboard.TargetProperty="(ScaleTransform.ScaleX)"
+                To="1.0" Duration="0:0:0.03"/>
+                                        <DoubleAnimation
+                Storyboard.TargetName="Animated_Close_But"
+                Storyboard.TargetProperty="(ScaleTransform.ScaleY)"
+                To="1.0" Duration="0:0:0.03"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Button.Triggers>
+                        <Button.Background>
+                            <ImageBrush ImageSource="Resources/Buttons/Close.png"/>
+                        </Button.Background>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Border>
 </Window>

@@ -136,10 +136,15 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Classes\Internet.cs" />
+    <Compile Include="Classes\MyMessageBox.cs" />
     <Compile Include="Classes\StaticVars.cs" />
     <Compile Include="Loaded_Data_Window.xaml.cs">
       <DependentUpon>Loaded_Data_Window.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Pages\Main_Page.xaml.cs">
+      <DependentUpon>Main_Page.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Services\ErrorsSaves.cs" />
     <Compile Include="Services\Handler.cs" />
     <Compile Include="Update_Window.xaml.cs">
       <DependentUpon>Update_Window.xaml</DependentUpon>
@@ -170,6 +175,14 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Pages\Main_Page.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Theme\Menu_Button_Theme.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Update_Window.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -225,6 +238,12 @@
   <ItemGroup>
     <Resource Include="Resources\Buttons\Close.png" />
     <Resource Include="Resources\Buttons\Minimize.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Buttons\Maximize2.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Buttons\Maximize1.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="AfterBuild">

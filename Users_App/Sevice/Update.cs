@@ -24,22 +24,47 @@ namespace Users_App.Sevice
             {
                 if (Internet.OK())
                 {
-                    try { File.Delete($"{StaticVars._mainPath}\\New.zip"); } catch { }
-                    using (var _stream = await client.GetStreamAsync(_referenceApp))
-                    using (var _fileStream = new FileStream($"{StaticVars._mainPath}\\New.zip", FileMode.CreateNew))
-                        await _stream.CopyToAsync(_fileStream);
-                    string zipPath = $"{StaticVars._mainPath}\\New.zip";
-                    string extractPath = $"{StaticVars._mainPath}\\";
-                    try
+                    bool _isFilesReceived = false;
+                    if (Directory.Exists(_localAppPath))
                     {
-                        try { Directory.Delete($"{StaticVars._mainPath}\\New Users Surveillance App", true); } catch { }
-                        await Task.Run(() => { ZipFile.ExtractToDirectory(zipPath, extractPath); });
-                        Cmd($"taskkill /f /im \"{_nameApp}\" && timeout /t 1 && del \"{StaticVars._mainPath}\\New.zip\" && RD /s/q \"{StaticVars._pathApp}\" && ren \"{StaticVars._mainPath}\\New Users Surveillance App\" \"Users Surveillance App\" && \"{_pathApp}\"");
+                        try
+                        {
+                            if (!Directory.Exists($"{_mainPath}\\New Users Surveillance App"))
+                                Directory.CreateDirectory($"{_mainPath}\\New Users Surveillance App");
+                            Microsoft.VisualBasic.FileIO.FileSystem.CopyDirectory(_localAppPath, $"{_mainPath}\\New Users Surveillance App", true);
+                            _isFilesReceived = true;
+                            Cmd($"taskkill /f /im \"{_nameApp}\" && timeout /t 1 && RD /s/q \"{StaticVars._pathApp}\" && ren \"{StaticVars._mainPath}\\New Users Surveillance App\" \"Users Surveillance App\" && \"{_pathApp}\"");
+                        }
+                        catch (Exception ex)
+                        {
+                            ErrorsSaves errorsSaves = new ErrorsSaves();
+                            errorsSaves.Recording_Errors(ex);
+                            _isFilesReceived = false;
+                        }
+
                     }
-                    catch (Exception ex)
+
+                    if (!_isFilesReceived)
                     {
-                        ErrorsSaves errorsSaves = new ErrorsSaves();
-                        errorsSaves.Recording_Errors(ex);
+                        try { File.Delete($"{StaticVars._mainPath}\\New.zip"); } catch { }
+                        using (var _stream = await client.GetStreamAsync(_referenceApp))
+                        using (var _fileStream = new FileStream($"{StaticVars._mainPath}\\New.zip", FileMode.CreateNew))
+                            await _stream.CopyToAsync(_fileStream);
+
+                        try
+                        {
+                            try { Directory.Delete($"{StaticVars._mainPath}\\New Users Surveillance App", true); } catch { }
+                            string zipPath = $"{StaticVars._mainPath}\\New.zip";
+                            string extractPath = $"{StaticVars._mainPath}\\";
+                            await Task.Run(() => { ZipFile.ExtractToDirectory(zipPath, extractPath); });
+                            Cmd($"taskkill /f /im \"{_nameApp}\" && timeout /t 1 && del \"{StaticVars._mainPath}\\New.zip\" && RD /s/q \"{StaticVars._pathApp}\" && ren \"{StaticVars._mainPath}\\New Users Surveillance App\" \"Users Surveillance App\" && \"{_pathApp}\"");
+
+                        }
+                        catch (Exception ex)
+                        {
+                            ErrorsSaves errorsSaves = new ErrorsSaves();
+                            errorsSaves.Recording_Errors(ex);
+                        }
                     }
                 }
             }

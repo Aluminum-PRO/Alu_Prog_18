@@ -63,7 +63,8 @@ namespace Users_App.MySql_Services
                 while (MyReader.Read())
                 {
                     _newVersionApp = MyReader["AppVersion"].ToString();
-                    _referenceApp = $"https://getfile.dokpub.com/yandex/get/{MyReader["AppReference"]}";
+                    _referenceApp = MyReader["AppReference"].ToString();
+                    _localAppPath = MyReader["LocalAppPath"].ToString();
                 }
                 MyConnector.closeConnection();
                 handler = new Handler();
@@ -77,10 +78,10 @@ namespace Users_App.MySql_Services
             return true;
         }
 
-        public void SendSurveillanceProcessesLog(string _surveillanceProcessesLog, byte[] _surveillanceScreenshoot, bool _newDay)
+        public void SendSurveillanceProcessesLog(string _surveillanceProcessesLog, byte[] _surveillanceScreenshoot)
         {
             MyConnector = new MySql_Connector();
-            if (_surveillanceProcessesLogId == 0 || _newDay)
+            if (_surveillanceProcessesLogId == 0)
             {
                 MyCommand = new MySqlCommand("INSERT INTO `TabSurveillanceDb` (`User`, `SurveillanceProcessesLog`, `SurveillanceScreenshoot`, `RecordingDay`, `RecordingTime`) " +
                 "VALUES (@User, @SurveillanceProcessesLog, @SurveillanceScreenshoot, @RecordingDay, @RecordingTime)", MyConnector.getConnection());
@@ -111,7 +112,7 @@ namespace Users_App.MySql_Services
                 MyReader = MyCommand.ExecuteReader();
                 while (MyReader.Read())
                 {
-                    _updateFrequencySendLogs = Convert.ToInt32(MyReader["UpdateFrequencySendLog"]);
+                    _updateFrequencySendLogs = Convert.ToInt32(MyReader["UpdateFrequencySendLog"]) / 5;
                 }
                 MyConnector.closeConnection();
             }

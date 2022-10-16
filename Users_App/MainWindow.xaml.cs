@@ -7,6 +7,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -14,8 +15,8 @@ using System.Windows.Forms;
 using System.Windows.Media.Imaging;
 using Users_App.MySql_Services;
 using Users_App.Sevice;
-using static System.Windows.Forms.AxHost;
 using static Users_App.Classes.StaticVars;
+using MessageBox = System.Windows.MessageBox;
 
 namespace Users_App
 {
@@ -31,12 +32,21 @@ namespace Users_App
         private MySql_Handler MyHandler;
         private List<int> _openProcessesListId;
         private static Bitmap BM = new Bitmap(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
+
+        private int _logSendingCounter = 0, _logSendCounter = 0;
+        private bool _isStareted = true/*, _getProcessing = false*/;
         #endregion
 
         public MainWindow()
         {
             InitializeComponent();
+            Visibility = Visibility.Hidden;
             Directory.SetCurrentDirectory(AppContext.BaseDirectory);
+            AppLoading();
+        }
+
+        private void AppLoading()
+        {
             SetAutorunValue(true);
             GetMainDirectiry();
             _pathErrorsLog = CheckErrorsLogDirectory();
@@ -49,30 +59,21 @@ namespace Users_App
                         System.Windows.MessageBox.Show("Ошибка связанная с БД. Программа будет закрыта...");
                     Environment.Exit(0);
                 }
-            }
-            catch (Exception ex)
-            {
-                ErrorsSaves errorsSaves = new ErrorsSaves();
-                errorsSaves.Recording_Errors(ex);
-            }
-            CurrentVersionTextBlock.Text = $"cur: {_currentVersionApp}";
-            NewVersionTextBlock.Text = $"new: {_newVersionApp}";
-            try
-            {
+                CurrentVersionTextBlock.Text = $"cur: {_currentVersionApp}";
+                NewVersionTextBlock.Text = $"new: {_newVersionApp}";
                 if (_isNeedUpdateApp)
                 { Update update = new Update(); update.StartUpdate(); }
                 else
-                { GetProcess(); }
+                { AppStarted(); }
             }
             catch (Exception ex)
             {
                 ErrorsSaves errorsSaves = new ErrorsSaves();
                 errorsSaves.Recording_Errors(ex);
             }
-
         }
 
-        private async void GetProcess()
+        private async void AppStarted()
         {
             _processesList = new List<Process>();
             _completedProcessesList = new List<CompletedProcessesClass>();
@@ -80,80 +81,90 @@ namespace Users_App
             _openProcessesListId = new List<int>();
 
             GetSurveillanceProcessesLog();
-            int _logSendingCounter = 0, _logSendCounter = 0; bool _isStareted = true;
-            await Task.Run(() => 
+            await Task.Run(() =>
             {
                 while (true)
                 {
-                    if (_processesList != null)
-                        _processesList.Clear();
-
-                    _processesList = Process.GetProcesses().ToList<Process>();
-                    CheckOpenProcesses();
-                    CheckCompletedProcesses();
-                    SaveSurveillanceProcessesLog();
-                    _logSendingCounter++;
-                    Action action = () =>
-                    { CurrentCountTextBlock.Text = $"{_logSendingCounter}"; CurrentSendCountTextBlock.Text = $"{_logSendCounter}"; };
-                    if (!Dispatcher.CheckAccess()) // CheckAccess returns true if you're on the dispatcher thread
-                        Dispatcher.Invoke(action);
-                    else
-                        action();
-                    //System.Windows.Forms.MessageBox.Show($" Частота {_updateFrequencySendLogs}\nСейчас {_logSendingCounter}");
-                    if (_isStareted || _logSendingCounter >= _updateFrequencySendLogs)
-                    {
-                        _logSendingCounter = 0; _isStareted = false; _logSendCounter++;
-
-                        SendSurveillanceProcessesLog();
-                    }
-                    Thread.Sleep(500);
+                    GetProcess();
+                    //while (!_getProcessing)
+                    //    _getProcessing = false;
+                    Thread.Sleep(4800);
                 }
-            }
-            );
-                
-            
+            });
+
 
         }
 
-        private async void SendSurveillanceProcessesLog()
+        private void GetProcess()
+        {
+            if (_processesList != null)
+                _processesList.Clear();
+
+            _processesList = Process.GetProcesses().ToList<Process>();
+            CheckOpenProcesses();
+            CheckCompletedProcesses();
+            SaveSurveillanceProcessesLog();
+            _logSendingCounter++;
+            Action action = () =>
+            { CurrentCountTextBlock.Text = $"{_logSendingCounter}"; CurrentSendCountTextBlock.Text = $"{_logSendCounter}"; };
+            if (!Dispatcher.CheckAccess())
+                Dispatcher.Invoke(action);
+            else
+                action();
+            if (_isStareted || _logSendingCounter >= _updateFrequencySendLogs)
+            {
+                _logSendingCounter = 0; _isStareted = false; _logSendCounter++;
+
+                SendSurveillanceProcessesLog();
+            }
+        }
+
+        private void SendSurveillanceProcessesLog()
         {
             byte[] _imgB;
-            bool _newDay = false;
 
             if (_currentDay != DateTime.Now.Day)
             {
-                _newDay = true;
+                _surveillanceProcessesLogId = 0;
                 _completedProcessesList.Clear();
                 _openProcessesList.Clear();
                 _openProcessesListId.Clear();
                 _currentDay = DateTime.Now.Day;
             }
-            await Task.Run(() =>
+            try
             {
-                try
-                {
-                    Image_Encoder(BitmapToBitmapImage(ScreenshootSave()), out _imgB);
-                    MyHandler = new MySql_Handler();
-                    MyHandler.SendSurveillanceProcessesLog(SaveSurveillanceProcessesLogText(), _imgB, _newDay);
-                }
-                catch (Exception ex)
-                {
-                    ErrorsSaves errorsSaves = new ErrorsSaves();
-                    errorsSaves.Recording_Errors(ex);
-                }
-            });
+                Image_Encoder(BitmapToBitmapImage(ScreenshootSave()), out _imgB);
+                MyHandler = new MySql_Handler();
+                MyHandler.SendSurveillanceProcessesLog(SaveSurveillanceProcessesLogText(), _imgB);
+            }
+            catch (Exception ex)
+            {
+                ErrorsSaves errorsSaves = new ErrorsSaves();
+                errorsSaves.Recording_Errors(ex);
+            }
         }
 
         private void CheckOpenProcesses()
         {
+            int _countsSeparets = 0; string _processWindowName = "";
             foreach (Process _processList in _processesList)
             {
                 bool _checkProcessOpen = false;
                 if (_openProcessesList != null)
                 {
+
                     foreach (OpenProcessesClass _openProcessesClass in _openProcessesList)
                     {
-                        if (_processList.ProcessName.ToString() == _openProcessesClass._processName && _processList.MainWindowTitle.ToString() == _openProcessesClass._processWindowName)
+                        if (_processList.MainWindowTitle.ToString().Contains('|'))
+                        {
+                            _countsSeparets = _processList.MainWindowTitle.ToString().Count(f => f == '|');
+                            _processWindowName = $"{_processList.MainWindowTitle.Split('|')[_countsSeparets]}";
+                        }
+                        else
+                        {
+                            _processWindowName = _processList.MainWindowTitle.ToString();
+                        }
+                        if (_processList.ProcessName.ToString() == _openProcessesClass._processName && _processWindowName == _openProcessesClass._processWindowName)
                         {
                             _checkProcessOpen = true;
                         }
@@ -355,6 +366,22 @@ namespace Users_App
             _currentDay = DateTime.Now.Day;
             if (Directory.Exists($"{_mainPath}\\AluAdmin"))
             { Visibility = Visibility.Visible; ShowInTaskbar = true; IsEnabled = true; _isAdminLaunch = true; }
+
+            bool isAdmin = new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+
+            if (isAdmin)
+            {
+                string _hostsTxt, _hostsPath;
+                _hostsPath = @"C:\Windows\System32\drivers\etc\hosts";
+                _hostsTxt = File.ReadAllText(_hostsPath);
+                if (!_hostsTxt.ToLower().Contains("alsurdb"))
+                {
+                    _hostsTxt += $"\n192.168.1.69\t AlSurDb";
+                    using (StreamWriter _stream = new StreamWriter(_hostsPath))
+                        _stream.WriteLine(_hostsTxt);
+                    MessageBox.Show($" Файл \"{_hostsPath}\" изменён, добавлен домен \"AlSurDb\"\n\n Пожалуйста Дмитрий!", "Users Surveillance", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                }
+            }
         }
 
         private static BitmapImage BitmapToBitmapImage(Bitmap bitmap)
@@ -422,7 +449,7 @@ namespace Users_App
             return true;
         }
 
-        public void GetApplicationVersion()
+        private void GetApplicationVersion()
         {
             string _stage = "", _version = Assembly.GetExecutingAssembly().GetName().Version.ToString(3);
             if (Convert.ToInt32(_version.Split('.')[0]) != 0)

@@ -2,12 +2,15 @@
 using Admin_App.MySql_Services;
 using Admin_App.Services;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
+using static Admin_App.Classes.StaticVars;
 
 namespace Admin_App
 {
@@ -17,6 +20,7 @@ namespace Admin_App
     public partial class Loaded_Data_Window : Window
     {
         private MySql_Handler My_Hand;
+        private MyMessageBox myMessageBox = new MyMessageBox();
         private Handler handler;
 
         private bool Copy_Check = false;
@@ -35,12 +39,12 @@ namespace Admin_App
                 {
                     if (element == "/Hi")
                     {
-                        MessageBox.Show("Hi, Admin!", "Al-Store", MessageBoxButton.YesNoCancel, MessageBoxImage.Information);
+                        myMessageBox.Information($"Hi, Admin!{_messageInfoClose}");
                         Environment.Exit(0);
                     }
-                    if (element == "/AutoRun_Update")
+                    if (element == "/No_Password")
                     {
-                        //AutoRun_Update = true;
+                        myMessageBox.Information($"Пароль сброшен!"); //TODO: Нужно добавить сброс пароля
                     }
                 }
             }
@@ -51,10 +55,10 @@ namespace Admin_App
                 if (processList.Length > 1)
                 { Environment.Exit(0); }
             }
-            Load();
+            AppLoading();
         }
 
-        private void Load()
+        private void AppLoading()
         {
             Thread thread = new Thread(() =>
             {
@@ -83,76 +87,84 @@ namespace Admin_App
                     _sourceOut += _source.Split('\\')[i - 1];
                 }
             }
-            StaticVars._mainPath = _sourceOut;
-            StaticVars._pathApp = $"{_sourceOut}\\Surveillance Admin";
-            StaticVars._pathSettings = Environment.ExpandEnvironmentVariables(StaticVars._pathApp + "\\lib\\Settings");
-            StaticVars._pathShortcut = Environment.ExpandEnvironmentVariables(StaticVars._pathApp + "\\lib\\Иконки ярлыков");
-            StaticVars._userIdentyty = Environment.UserName;
+            _mainPath = _sourceOut;
+            _pathApp = $"{_sourceOut}\\Surveillance Admin";
+            _pathShortcut = $"{_pathApp}\\lib\\Иконки ярлыков";
+            _pathErrorsLog = $"{_sourceOut}\\Logs\\Errors Log"; CheckCreateDirectory(_pathErrorsLog);
+            _userIdentyty = Environment.UserName;
 
-            
             handler = new Handler();
             handler.GetApplicationVersion();
 
-            My_Hand = new MySql_Handler();
-            //My_Hand.Getting_Data();
-
-            StaticVars._loadingData = false;
-            Check_Loaded();
-        }
-
-        private void CheckCreateDirectory(string _source)
-        {
-            if (!Directory.Exists(_source))
+            if (!Internet.OK())
             {
-                Directory.CreateDirectory(_source);
+                MessageBoxResult _result = MessageBox.Show(" Нет доступа в сеть, дальнейшая работа \"Surveillance Admin\" не возможна, продолжить загрузку?", "Surveillance Admin", MessageBoxButton.YesNo, MessageBoxImage.Error);
+                if (_result == MessageBoxResult.Yes) { DownloadDataProcess(); } else { Environment.Exit(0); }
+            }
+            else if (Internet.OK())
+            {
+                DownloadDataProcess();
             }
         }
 
+        private void DownloadDataProcess()
+        {
+            _isLoadingData = false;
+            My_Hand = new MySql_Handler();
+            My_Hand.GetData();
+            _generalUsersLogList = new List<CurrentUsersClass>();
+            _generalUsersList = new List<GeneralUsersClass>();
+            My_Hand.GetSurveillanceLogs();
+
+                while (true)
+                    if (_isLoadingData)
+                        break;
+
+            AppStarted();
+        }
+
+        private void CheckCreateDirectory(string _source)
+        { if (!Directory.Exists(_source)) Directory.CreateDirectory(_source); }
+
         private void CheckShortcutCreate()
         {
-            if (!File.Exists("C:\\Users\\" + StaticVars._userIdentyty + "\\Desktop\\Surveillance Admin.lnk") && StaticVars._startCreatingShortcut == true)
+            if (!File.Exists("C:\\Users\\" + _userIdentyty + "\\Desktop\\Surveillance Admin.lnk") && _startCreatingShortcut == true)
             {
                 Activate();
                 MessageBoxResult result = MessageBox.Show(" На вашем рабочем столе нет ярлыка 'Surveillance Admin'.\n\n   Создать?", "Surveillance Admin", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (result == MessageBoxResult.Yes)
                 {
-                    handler.CreateShortcut("Surveillance Admin", "Surveillance Admin - Просмотр всех запущенных процессов у пользователей", StaticVars._currentVersionApp, "Ctrl+Shift+S");
+                    handler.CreateShortcut("Surveillance Admin", "Surveillance Admin - Просмотр всех запущенных процессов у пользователей", _currentVersionApp, "Ctrl+Shift+S");
                 }
                 else if (result == MessageBoxResult.No)
                 {
                     MessageBoxResult _result = MessageBox.Show(" Не предлагать больше этот вопрос?", "Surveillance Admin", MessageBoxButton.YesNo, MessageBoxImage.Question);
                     if (_result == MessageBoxResult.Yes)
-                    { 
-                        StaticVars._startCreatingShortcut = false;
+                    {
+                        _startCreatingShortcut = false;
                         My_Hand.Set_Properties("StartCreatingShortcut", false, out bool Result);
-                        if (Result == true)
-                        { }
-                        else if (Result == false)
-                        {
-                            StaticVars._startCreatingShortcut = true;
-                            
-                            MessageBox.Show(" Не удалось обновить данные. Проверьте подключение к интернету или обратитесь к разработчику за помощью. \n Aluminum.Company163@yandex.ru или https://vk.com/aluminum343", "Surveillance Admin", MessageBoxButton.OK, MessageBoxImage.Error);
-                        }
+                        if (!Result) { _startCreatingShortcut = true; myMessageBox.Exclamation($" Не удалось обновить данные{_messageInfoContacts}"); }
                     }
                 }
             }
-            else if (File.Exists("C:\\Users\\" + StaticVars._userIdentyty + "\\Desktop\\Al-Store.lnk") && Properties.Settings.Default.First_Started == true)
+            else if (File.Exists("C:\\Users\\" + _userIdentyty + "\\Desktop\\Al-Store.lnk") && Properties.Settings.Default.First_Started == true)
             {
                 Properties.Settings.Default.First_Started = false;
                 Properties.Settings.Default.Save();
 
-                handler.CreateShortcut("Surveillance Admin", "Surveillance Admin - Просмотр всех запущенных процессов у пользователей", StaticVars._currentVersionApp, "Ctrl+Shift+S");
+                handler.CreateShortcut("Surveillance Admin", "Surveillance Admin - Просмотр всех запущенных процессов у пользователей", _currentVersionApp, "Ctrl+Shift+S");
             }
         }
-        private void Check_Loaded()
+        private void AppStarted()
         {
             while (true)
             {
-                if (!StaticVars._logoAnimation)
+                if (!_logoAnimation)
                 { break; }
             }
             Thread.Sleep(800);
             CheckShortcutCreate();
+
             MainWindow mainWindow = new MainWindow();
             mainWindow.Show();
             Close();

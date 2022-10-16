@@ -1,78 +1,146 @@
-﻿using Admin_App.Classes;
+﻿using Admin_App.Services;
 using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media.Imaging;
+using static Admin_App.Classes.StaticVars;
 
 namespace Admin_App.MySql_Services
 {
     internal class MySql_Handler
     {
+        private Handler handler = new Handler();
         private MySql_Connector MyConnector;
         private MySqlDataAdapter MyAdapter;
         private MySqlCommand MyCommand;
         private MySqlDataReader MyReader;
         private DataTable TabSurveillanceDb;
+        private BitmapImage _surveillanceScreenshootIn;
 
-        public void Getting_Data()
+        public bool GetData()
         {
-            MyConnector = new MySql_Connector(); MyAdapter = new MySqlDataAdapter();
-            MyCommand = new MySqlCommand("SELECT * FROM `TabUpdateDb` WHERE `id` = 1; SELECT * FROM `Tab_Al_Store_Db` WHERE `id` = 2; SELECT * FROM `Tab_Al_Store_Db` WHERE `id` = 3", My_Con.getConnection());
-
-            My_Con.openConnection();
-
-            reader = null;
-            reader = command.ExecuteReader();
-
-            while (reader.Read())
+            MyConnector = new MySql_Connector();
+            MyCommand = new MySqlCommand("SELECT * FROM `TabSettingsDb` WHERE `id` = 1", MyConnector.getConnection());
+            if (MyConnector.openConnection())
             {
-                StaticVars._newVersionApp = reader["VersionApp"].ToString();
-                StaticVars._whatNewsUpdate = reader["WhatNewsUpdate"].ToString();
-            }
-            if (reader.NextResult())
-            {
-                while (reader.Read())
+                MyReader = null;
+                MyReader = MyCommand.ExecuteReader();
+                while (MyReader.Read())
                 {
-                    StaticVars._startCreatingShortcut = Convert.ToBoolean(reader["StartCreatingShortcut"]); 
+                    _updateFrequencySendLogs = Convert.ToInt32(MyReader["UpdateFrequencySendLog"]);
+                    _startCreatingShortcut = Convert.ToBoolean(MyReader["StartCreatingShortcut"]);
+                    _needPassword = Convert.ToBoolean(MyReader["NeedPassword"]);
                 }
+                MyConnector.closeConnection();
             }
-            if (reader.NextResult())
+            else
             {
-                while (reader.Read())
-                {
-                    
-                }
+                return false;
             }
 
-            My_Con.closeConnection();
+            MyCommand = new MySqlCommand("SELECT * FROM `TabUpdateDb` WHERE `id` = 2", MyConnector.getConnection());
+            if (MyConnector.openConnection())
+            {
+                MyReader = null;
+                MyReader = MyCommand.ExecuteReader();
+                while (MyReader.Read())
+                {
+                    _newVersionApp = MyReader["AppVersion"].ToString();
+                    _referenceApp = MyReader["AppReference"].ToString(); ;
+                }
+                MyConnector.closeConnection();
+                handler.GettingInformationAboutNeedUpdate();
+            }
+            else
+            {
+                return false;
+            }
+
+            return true;
         }
 
-        public void Set_Properties(string _prop, bool _setIn, out bool _result)
+        public async void GetSurveillanceLogs()
         {
-            My_Con = new MySql_Connector();
-            command = new MySqlCommand($"UPDATE `TabSettingsDb` SET `{_prop}` = @Prop" +
+            bool _isExistsUser;
+            int _recordingDay = 0, _recordingMonth = 0, _recordingYear = 0, _recordingHour = 0, _recordingMinets = 0;
+
+            MyConnector = new MySql_Connector();
+            MyCommand = new MySqlCommand("SELECT * FROM `TabSurveillanceDb` ORDER BY `RecordingDay` asc", MyConnector.getConnection());
+
+            await Task.Run(() =>
+            {
+                if (MyConnector.openConnection())
+                {
+                    if (_generalUsersLogList != null)
+                        _generalUsersLogList.Clear();
+                    if (_generalUsersList != null)
+                        _generalUsersList.Clear();
+                    MyReader = null;
+                    MyReader = MyCommand.ExecuteReader();
+                    while (MyReader.Read())
+                    {
+                        _numberOfRecords++;
+                        _recordingDay = Convert.ToInt32(MyReader["RecordingDay"].ToString().Split('.')[0]);
+                        _recordingMonth = Convert.ToInt32(MyReader["RecordingDay"].ToString().Split('.')[1]);
+                        _recordingYear = Convert.ToInt32(MyReader["RecordingDay"].ToString().Split('.')[2]);
+                        _recordingHour = Convert.ToInt32(MyReader["RecordingTime"].ToString().Split(':')[0]);
+                        _recordingMinets = Convert.ToInt32(MyReader["RecordingTime"].ToString().Split(':')[1]);
+                        _generalUsersLogList.Add(new CurrentUsersClass()
+                        {
+                            _surveillanceProcessesLogId = Convert.ToInt32(MyReader["Id"]),
+                            _surveillanceProcessesLog = MyReader["SurveillanceProcessesLog"].ToString(),
+                            _userIdentyty = MyReader["User"].ToString(),
+                            _recordingDateTime = new DateTime(_recordingYear, _recordingMonth, _recordingDay, _recordingHour, _recordingMinets, 0),
+                            _surveillanceScreenshoot = _surveillanceScreenshootIn,
+                        });
+
+                        Action AddNewUsers = () =>
+                        {
+                            _generalUsersList.Add(new GeneralUsersClass()
+                            {
+                                _userIdentyty = MyReader["User"].ToString()
+                            });
+                        };
+
+                        if (_generalUsersList == null || _generalUsersList.Count == 0)
+                        {
+                            AddNewUsers();
+                        }
+                        else
+                        {
+                            _isExistsUser = false;
+                            foreach (GeneralUsersClass _generalUsersClass in _generalUsersList)
+                            {
+                                if (_generalUsersClass._userIdentyty == MyReader["User"].ToString())
+                                    _isExistsUser = true;
+                            }
+                            if (!_isExistsUser)
+                                AddNewUsers();
+                        }
+                    }
+                    MyConnector.closeConnection();
+                }
+                _isLoadingData = true;
+            });
+        }
+
+        public void Set_Properties(string _prop, bool _set, out bool _result)
+        {
+            MyConnector = new MySql_Connector();
+            MyCommand = new MySqlCommand($"UPDATE `TabSettingsDb` SET `{_prop}` = @Prop" +
                 " WHERE `TabSettingsDb`.`Id` = 1",
-                My_Con.getConnection());
+                MyConnector.getConnection());
 
-            int _setOut;
-            if (_setIn)
-                _setOut = 1;
+            MyConnector.openConnection();
+
+            if (MyCommand.ExecuteNonQuery() == 1)
+                _result = true;
             else
-                _setOut = 0;
+                _result = false;
 
-            command.Parameters.Add("@Prop", MySqlDbType.Int32).Value = _setOut;
-
-            My_Con.openConnection();
-
-            if (command.ExecuteNonQuery() == 1)
-            { _result = true; }
-            else
-            { _result = false; }
-
-            My_Con.closeConnection();
+            MyConnector.closeConnection();
         }
     }
 }

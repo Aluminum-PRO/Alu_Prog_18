@@ -6,9 +6,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Admin_App" xmlns:User_Control="clr-namespace:Admin_App.User_Control"
         mc:Ignorable="d"
-        Title="" Height="310" Width="834" Opacity="1" WindowStyle="None" ResizeMode="NoResize" ShowInTaskbar="False" WindowStartupLocation="CenterScreen" AllowsTransparency="True" Background="Transparent" Loaded="Window_Loaded">
+        Title="" Height="230" Width="800" Opacity="1" WindowStyle="None" ResizeMode="NoResize" ShowInTaskbar="False" WindowStartupLocation="CenterScreen" AllowsTransparency="True" Background="Transparent" Loaded="Window_Loaded">
     <Grid Margin="10">
-        <TextBlock Text="Al-Programs" FontSize="130" FontStyle="Oblique"  TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Top" Foreground="White" Margin="0 15 0 0">
+        <TextBlock Text="Surveillance Admin" FontSize="90" FontStyle="Oblique"  TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Top" Foreground="White" Margin="0 15 0 0">
             <TextBlock.Effect>
                 <DropShadowEffect BlurRadius="90" Color="#FFB483EE" ShadowDepth="0" />
             </TextBlock.Effect>

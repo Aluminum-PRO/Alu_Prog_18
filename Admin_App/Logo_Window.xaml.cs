@@ -1,17 +1,6 @@
-﻿using Admin_App.Classes;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
+using static Admin_App.Classes.StaticVars;
 
 namespace Admin_App
 {
@@ -31,7 +20,7 @@ namespace Admin_App
             Show_Logo();
         }
 
-        private async Task Show_Logo()
+        private async void Show_Logo()
         {
             for (Opacity = 0; Opacity <= 1;)
             {
@@ -39,29 +28,17 @@ namespace Admin_App
                 await Task.Delay(30);
             }
 
-            for (Opacity = 1; Opacity >= 0.4;)
-            {
-                Opacity -= 0.05;
-                await Task.Delay(30);
-            }
-
-            await Task.Delay(50);
-
-            for (Opacity = 0.4; Opacity <= 1;)
-            {
-                Opacity += 0.05;
-                await Task.Delay(30);
-            }
-            StaticVars._logoAnimation = false;
+            _logoAnimation = false;
             Check_Loaded();
         }
 
         private async void Check_Loaded()
         {
-            await Task.Run(() => {
+            await Task.Run(() =>
+            {
                 while (true)
                 {
-                    if (!StaticVars._loadingData)
+                    if (_isLoadingData)
                     { break; }
                 }
             });
@@ -69,14 +46,13 @@ namespace Admin_App
             Hide_Logo();
         }
 
-        private async Task Hide_Logo()
+        private async void Hide_Logo()
         {
             for (Opacity = 1; Opacity >= 0;)
             {
                 Opacity -= 0.05;
                 await Task.Delay(30);
             }
-
             Close();
         }
     }
